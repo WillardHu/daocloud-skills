@@ -1,0 +1,223 @@
+commands:
+  # ── 平台内部 API，不对外暴露 ──────────────────────────────────────────
+  # BatchAudits
+  batch-insert-audits:   { ignore: true }
+
+  # FeatureGate
+  get-feature-gate:      { ignore: true }
+
+  # GProducts / GProductLicenses
+  list-g-products:             { ignore: true }
+  get-g-product:               { ignore: true }
+  list-g-product-licenses:     { ignore: true }
+  get-g-product-license:       { ignore: true }
+  create-g-product-license:    { ignore: true }
+  delete-g-product-license:    { ignore: true }
+  update-g-product-license:    { ignore: true }
+
+  # KeycloakEvent
+  list-keycloak-events:  { ignore: true }
+
+  # LoginPage
+  get-login-page:        { ignore: true }
+  update-login-page:     { ignore: true }
+
+  # Openapi
+  get-open-api:          { ignore: true }
+
+  # ProductNavigator / TopNavigator
+  list-product-navigators: { ignore: true }
+  get-product-navigator:   { ignore: true }
+  update-product-navigator: { ignore: true }
+  list-top-navigators:     { ignore: true }
+  get-top-navigator:       { ignore: true }
+  update-top-navigator:    { ignore: true }
+
+  # Publish
+  publish:               { ignore: true }
+
+  # Sms / SmtpSetting
+  get-sms-config:        { ignore: true }
+  update-sms-config:     { ignore: true }
+  send-sms:              { ignore: true }
+  get-smtp-setting:      { ignore: true }
+  update-smtp-setting:   { ignore: true }
+  test-smtp-setting:     { ignore: true }
+
+  # Theme
+  list-themes:           { ignore: true }
+  get-theme:             { ignore: true }
+  update-theme:          { ignore: true }
+  create-theme:          { ignore: true }
+  delete-theme:          { ignore: true }
+
+  # ── 用户管理 (Users) ──────────────────────────────────────────────────
+  list-users:
+    short: "List platform users"
+    aliases: [ls-users]
+    example: |
+      dcectl ghippo users list-users
+      dcectl ghippo users list-users --page-size 50 -o json
+    params:
+      keyword:
+        help: "Filter by username or email"
+      page-size:
+        help: "Number of results per page"
+        default: "20"
+
+  create-user:
+    short: "Create a new platform user"
+    example: |
+      dcectl ghippo users create-user \
+        --set name=alice \
+        --set email=alice@example.com \
+        --set password=changeme
+
+  get-user:
+    short: "Get user details by ID"
+    aliases: [describe-user]
+
+  delete-user:
+    short: "Delete a user by ID"
+
+  update-user:
+    short: "Update user profile"
+
+  set-user-password:
+    short: "Set or reset a user's password"
+
+  reset-user-m-f-a:
+    short: "Reset MFA for a user"
+
+  list-user-roles:
+    short: "List roles assigned to a user"
+
+  update-user-roles:
+    short: "Assign or update roles for a user"
+
+  list-user-groups:
+    short: "List groups a user belongs to"
+
+  create-user-access-token:
+    short: "Create an access token for a user"
+
+  list-user-access-tokens:
+    short: "List access tokens for a user"
+
+  delete-user-access-token:
+    short: "Delete an access token"
+
+  # ── 用户组 (Group) ────────────────────────────────────────────────────
+  list-groups:
+    short: "List user groups"
+    aliases: [ls-groups]
+
+  create-group:
+    short: "Create a user group"
+
+  get-group:
+    short: "Get group details"
+    aliases: [describe-group]
+
+  delete-group:
+    short: "Delete a user group"
+
+  update-group:
+    short: "Update a user group"
+
+  # ── 工作空间 (Workspace) ──────────────────────────────────────────────
+  list-workspaces:
+    short: "List workspaces"
+    aliases: [ls-ws, ls-workspaces]
+    example: |
+      dcectl ghippo workspace list-workspaces
+      dcectl ghippo workspace list-workspaces -o json
+
+  create-workspace:
+    short: "Create a workspace"
+    example: |
+      dcectl ghippo workspace create-workspace --set name=my-workspace
+
+  get-workspace:
+    short: "Get workspace details"
+    aliases: [describe-workspace]
+
+  delete-workspace:
+    short: "Delete a workspace"
+
+  update-workspace:
+    short: "Update a workspace"
+
+  list-folders:
+    short: "List folders (namespaces within workspaces)"
+    aliases: [ls-folders]
+
+  create-folder:
+    short: "Create a folder"
+
+  get-folder:
+    short: "Get folder details"
+
+  delete-folder:
+    short: "Delete a folder"
+
+  update-folder:
+    short: "Update a folder"
+
+  # ── 角色 (Role) ───────────────────────────────────────────────────────
+  list-roles:
+    short: "List platform roles"
+    aliases: [ls-roles]
+
+  create-role:
+    short: "Create a custom role"
+
+  get-role:
+    short: "Get role details"
+
+  delete-role:
+    short: "Delete a custom role"
+
+  update-role:
+    short: "Update a custom role"
+
+  list-all-permissions:
+    short: "List all available permissions"
+
+  # ── 身份提供商 (IDP / LDAP) ───────────────────────────────────────────
+  list-i-d-ps:
+    short: "List configured identity providers"
+    aliases: [ls-idp]
+
+  create-i-d-p:
+    short: "Configure a new identity provider"
+
+  get-i-d-p:
+    short: "Get identity provider details"
+
+  delete-i-d-p:
+    short: "Remove an identity provider"
+
+  update-i-d-p:
+    short: "Update an identity provider"
+
+  list-ldap-config:
+    short: "List LDAP configurations"
+
+  # ── 审计 (Audit) ──────────────────────────────────────────────────────
+  list-audits:
+    short: "List audit log entries"
+    aliases: [ls-audit]
+    example: |
+      dcectl ghippo audit list-audits --page-size 100 -o json
+
+  # ── 消息 (Message) ────────────────────────────────────────────────────
+  list-messages:
+    short: "List platform messages/notifications"
+
+  # ── 安全策略 (SecurityPolicy) ─────────────────────────────────────────
+  get-security-policy:
+    short: "Get current security policy settings"
+
+  update-security-policy:
+    short: "Update security policy settings"
