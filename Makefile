@@ -24,8 +24,18 @@ sync-one:
 		-overlay internal/overlay \
 		-skill-root skills
 
-build:
+build: internal/generated
 	go build -o bin/dcectl ./cmd/dcectl
+
+internal/generated: .cache/specs-sync/ghippo/sync-state.yaml
+	$(CODEGEN) \
+		-manifest cli.yaml \
+		-sources specs/sources.yaml \
+		-overlay internal/overlay \
+		-skill-root skills
+
+.cache/specs-sync/ghippo/sync-state.yaml:
+	$(SPECSYNC) -sources specs/sources.yaml
 
 # dev: install dcectl to PATH and symlink skill into opencode for live debugging
 dev: build
@@ -53,4 +63,4 @@ dev-clean:
 	rm -f /usr/local/bin/dcectl
 
 clean:
-	rm -rf .cache internal/generated skills bin
+	rm -rf .cache bin
