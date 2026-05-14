@@ -46,6 +46,46 @@ dcectl commands show kpanda clusters list --json
 dcectl kpanda clusters list -o json
 ```
 
+## Container Image
+
+The image bundles the `dcectl` binary and the `skills/dcectl` directory under `/app/`, intended for use as a Kubernetes init container to distribute the tooling into a shared volume.
+
+```bash
+# Build multi-arch image locally
+make image
+
+# Build and push to registry
+make image-push IMAGE_REPO=registry.example.com/dcectl IMAGE_TAG=v1.0.0
+```
+
+Default values: `IMAGE_REPO=daocloud/dcectl`, `IMAGE_TAG=latest`.
+
+### Init Container Example
+
+```yaml
+initContainers:
+  - name: install-dcectl
+    image: daocloud/dcectl:latest
+    command:
+      - sh
+      - -c
+      - |
+        cp /app/dcectl /target/bin/dcectl
+        cp -r /app/skills/dcectl /target/.agents/skills/dcectl
+    volumeMounts:
+      - name: tools
+        mountPath: /target
+
+volumes:
+  - name: tools
+    emptyDir: {}
+```
+
+After the init container completes, the shared volume contains:
+
+- `/target/bin/dcectl` — CLI binary
+- `/target/.agents/skills/dcectl/` — AI agent skill
+
 ## Development
 
 | Target | Description |
@@ -55,6 +95,8 @@ dcectl kpanda clusters list -o json
 | `make codegen` | Regenerate Go code and skill references from specs |
 | `make sync-one SOURCE=<name>` | Sync and regenerate a single source (e.g. `ghippo`) |
 | `make build` | Build `bin/dcectl` |
+| `make image` | Build multi-arch image locally (`linux/amd64`, `linux/arm64`) |
+| `make image-push` | Build and push multi-arch image to registry |
 | `make dev` | Build, install, and symlink skill for local debugging |
 | `make dev-clean` | Remove installed binary and skill symlink |
 | `make clean` | Remove `.cache` and `bin` |

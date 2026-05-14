@@ -1,7 +1,9 @@
-SPECSYNC := go tool specsync
-CODEGEN  := go tool codegen
+SPECSYNC   := go tool specsync
+CODEGEN    := go tool codegen
+IMAGE_REPO ?= daocloud/dcectl
+IMAGE_TAG  ?= latest
 
-.PHONY: bootstrap specsync codegen build clean
+.PHONY: bootstrap specsync codegen build image image-push clean
 
 bootstrap: specsync codegen
 
@@ -61,6 +63,20 @@ dev: build
 dev-clean:
 	rm -f ~/.agents/skills/dcectl
 	rm -f /usr/local/bin/dcectl
+
+image:
+	docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		-t $(IMAGE_REPO):$(IMAGE_TAG) \
+		--load \
+		.
+
+image-push:
+	docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		-t $(IMAGE_REPO):$(IMAGE_TAG) \
+		--push \
+		.
 
 clean:
 	rm -rf .cache bin
