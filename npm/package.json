@@ -1,0 +1,32 @@
+{
+  "name": "@daocloud-cli/dc",
+  "version": "0.0.3",
+  "description": "DaoCloud dc CLI",
+  "bin": {
+    "dc": "scripts/run.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Frapschen/daocloud-skills.git"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "scripts/install.js",
+    "scripts/run.js",
+    "checksums.txt"
+  ]
+}
