@@ -3,7 +3,7 @@ module github.com/DaoCloud/daocloud-skills
 go 1.25.7
 
 require (
-	github.com/samzong/lathe v0.2.4-0.20260519033154-eaa522ff0166
+	github.com/lathe-cli/lathe v0.2.4
 	github.com/spf13/cobra v1.10.2
 )
 
@@ -17,4 +17,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-tool github.com/samzong/lathe/cmd/lathe
+tool github.com/lathe-cli/lathe/cmd/lathe
