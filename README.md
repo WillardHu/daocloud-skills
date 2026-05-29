@@ -109,8 +109,8 @@ Use the dce skill to list DCE clusters.
 For regular users, download a prebuilt archive from GitHub Releases:
 
 ```bash
-VERSION=v0.1.0-rc.4
-OS=linux
+VERSION=v0.1.0-rc.6
+OS=darwin
 ARCH=amd64
 PKG="dce-${VERSION}-${OS}-${ARCH}"
 
