@@ -27,6 +27,7 @@ Use this skill when a user asks you to operate `dce`, inspect its API commands, 
 ## References
 
 - Read `references/catalog.md` for the command discovery protocol and catalog field meanings.
+- Read `references/modules/amamba.md` for the `amamba` module command index.
 - Read `references/modules/container-management.md` for the `container-management` module command index.
 - Read `references/modules/global-management.md` for the `global-management` module command index.
 - Read `references/modules/insight.md` for the `insight` module command index.

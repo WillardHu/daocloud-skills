@@ -1,0 +1,677 @@
+commands:
+  # ── 平台内部 API，不对外暴露 ──────────────────────────────────────────
+  # FeatureGate / Setting
+  get-feature-gate:           { ignore: true }
+  list-feature-gate:          { ignore: true }
+  get-settings:               { ignore: true }
+  update-settings:            { ignore: true }
+  list-gpu-setting:           { ignore: true }
+
+  # Grafana / 内部监控
+  grafana-dashboard:          { ignore: true }
+
+  # 平台内部 hook / 健康探针 / 资源清单
+  check-webhook-token:        { ignore: true }
+  collection-of-httpapi:      { ignore: true }
+  reload:                     { ignore: true }
+  get-sentinel-address:       { ignore: true }
+  get-inbound-agent-info:     { ignore: true }
+  get-mesh-id:                { ignore: true }
+  get-gitlab-credential-name: { ignore: true }
+  get-sonarqube-credential-name: { ignore: true }
+  get-plugin-installation-information: { ignore: true }
+
+  # 直返原始 K8s/CR JSON 的接口（用户一般通过 get-* 的 --output yaml 即可）
+  get-api-resources:          { ignore: true }
+  get-cluster-resource-json:  { ignore: true }
+  get-override-policy-json:   { ignore: true }
+  get-propagation-policy-json: { ignore: true }
+
+  # 集群内 K8s 资源详情（多数为前端调用，CLI 用户用 kpanda 即可）
+  list-cluster-cluster-service-version:                 { ignore: true }
+  list-cluster-cluster-service-version-custom-resources: { ignore: true }
+  list-cluster-service-version:                         { ignore: true }
+  list-cluster-service-version-custom-resource:         { ignore: true }
+  list-cluster-service-version-custom-resource-definition: { ignore: true }
+  list-cluster-service-version-examples:                { ignore: true }
+  list-cluster-network-allocated-resources:             { ignore: true }
+  list-clusters-location-summary:                        { ignore: true }
+  list-gpu-summary:                                     { ignore: true }
+  list-cluster-api-resources:                           { ignore: true }
+  list-cluster-collection-resources:                    { ignore: true }
+  list-cluster-resources:                               { ignore: true }
+
+  # SummaryService / StorageClasses 摘要版本（与 Management 真列表同名，取 UI 版）
+  list-storage-classes:                                 { ignore: true }   # SummaryService 那个，与 Management 版本同名取 UI 版
+
+  # ── lathe v0.2.4 运行时 bug ──────────────────────────────────────────
+  # 这两个命令在 spec 里同时声明了 query 参数 `all` 和分页提示，
+  # 框架会在同一个 cobra 命令上重复注册 --all 导致 binary 启动时 panic：
+  #   panic: list-workspace-bind-git-lab-project-list flag redefined: all
+  # 这是 lathe v0.2.4 build.go:266 的实现 bug（应使用 --fetch-all 避免冲突）。
+  # 临时方案：ignore 掉，等 lathe 升级到带 fix 的版本。
+  list-projects:                                        { ignore: true }   # 镜像仓库项目浏览，可用 list-registries/list-repositories
+  list-workspace-bind-git-lab-project-list:             { ignore: true }   # GitLab 项目绑定列表
+
+  # ── 应用管理 (ApplicationService) ────────────────────────────────────
+  list-applications:
+    short: "List applications in a workspace"
+    aliases: [ls, ls-apps]
+    example: |
+      dce amamba applicationservice list-applications --workspace-id <ws>
+      dce amamba applicationservice list-applications --workspace-id <ws> --name my-app -o json
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-application:
+    short: "Get an application's full details"
+    aliases: [describe-app]
+    example: |
+      dce amamba applicationservice get-application --workspace-id <ws> --name my-app
+
+  create-application:
+    short: "Create a new application"
+    example: |
+      dce amamba applicationservice create-application --workspace-id <ws> --file app.yaml
+
+  update-application:
+    short: "Update an existing application"
+    example: |
+      dce amamba applicationservice update-application --workspace-id <ws> --name my-app --file app.yaml
+
+  delete-application:
+    short: "Delete an application"
+    example: |
+      dce amamba applicationservice delete-application --workspace-id <ws> --name my-app
+
+  get-application-status:
+    short: "Get the runtime status of an application"
+    example: |
+      dce amamba applicationservice get-application-status --workspace-id <ws> --name my-app -o json
+
+  get-application-topology:
+    short: "Get the application topology graph (services, workloads, ingresses)"
+    aliases: [topo]
+    example: |
+      dce amamba applicationservice get-application-topology --workspace-id <ws> --name my-app
+
+  get-application-yaml:
+    short: "Get the application as raw YAML"
+    example: |
+      dce amamba applicationservice get-application-yaml --workspace-id <ws> --name my-app
+
+  update-application-yaml:
+    short: "Update the application from raw YAML"
+    example: |
+      dce amamba applicationservice update-application-yaml --workspace-id <ws> --name my-app --file app.yaml
+
+  list-application-workloads:
+    short: "List workloads under an application"
+    example: |
+      dce amamba applicationservice list-application-workloads --workspace-id <ws> --name my-app
+
+  list-application-events:
+    short: "List events for an application"
+    example: |
+      dce amamba applicationservice list-application-events --workspace-id <ws> --name my-app --page 1 --page-size 50
+
+  list-application-revisions:
+    short: "List revisions of an application (for rollback)"
+    example: |
+      dce amamba applicationservice list-application-revisions --workspace-id <ws> --name my-app
+
+  rollback-application-revision:
+    short: "Roll back an application to a previous revision"
+    example: |
+      dce amamba applicationservice rollback-application-revision --workspace-id <ws> --name my-app --revision-id <rev>
+
+  # ── 应用组件 (ApplicationService/Component) ───────────────────────────
+  list-components:
+    short: "List components of an application"
+    example: |
+      dce amamba applicationservice list-components --workspace-id <ws> --name my-app
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-component:
+    short: "Get a single component by name"
+    example: |
+      dce amamba applicationservice get-component --workspace-id <ws> --application my-app --name web
+
+  create-component:
+    short: "Add a component to an existing application"
+    example: |
+      dce amamba applicationservice create-component --workspace-id <ws> --application my-app --file component.yaml
+
+  update-component:
+    short: "Update a component's spec"
+    example: |
+      dce amamba applicationservice update-component --workspace-id <ws> --application my-app --name web --file component.yaml
+
+  delete-component:
+    short: "Remove a component from an application"
+    example: |
+      dce amamba applicationservice delete-component --workspace-id <ws> --application my-app --name web
+
+  start-component:
+    short: "Resume a paused component"
+    example: |
+      dce amamba applicationservice start-component --workspace-id <ws> --application my-app --name web
+
+  stop-component:
+    short: "Pause a component (scale to 0)"
+    example: |
+      dce amamba applicationservice stop-component --workspace-id <ws> --application my-app --name web
+
+  pause-component:
+    short: "Pause a running component"
+    example: |
+      dce amamba applicationservice pause-component --workspace-id <ws> --application my-app --name web
+
+  resume-component:
+    short: "Resume a paused component"
+    example: |
+      dce amamba applicationservice resume-component --workspace-id <ws> --application my-app --name web
+
+  restart-component:
+    short: "Restart a component (rolling restart of pods)"
+    example: |
+      dce amamba applicationservice restart-component --workspace-id <ws> --application my-app --name web
+
+  # ── 工作负载 (Workloads) ──────────────────────────────────────────────
+  list-workloads:
+    short: "List workloads across namespaces (deprecated; prefer list-application-workloads)"
+    example: |
+      dce amamba workloads list-workloads --workspace-id <ws> --cluster <c> --namespace <ns>
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  list-workload-pod-containers:
+    short: "List containers in a workload's pods"
+    example: |
+      dce amamba workloads list-workload-pod-containers --workspace-id <ws> --cluster <c> --namespace <ns> --workload <name>
+
+  get-pod-container-log:
+    short: "Stream logs from a workload container"
+    aliases: [logs]
+    example: |
+      dce amamba workloads get-pod-container-log --workspace-id <ws> --cluster <c> --namespace <ns> --pod <pod> --container <c>
+
+  update-workload-replicas:
+    short: "Scale a workload to N replicas"
+    aliases: [scale]
+    example: |
+      dce amamba workloads update-workload-replicas --workspace-id <ws> --workload-name <name> --replicas 3
+
+  # ── 流水线 (Pipelines / Toolchain / GlobalBuildParameter) ─────────────
+  list-pipelines:
+    short: "List Jenkins pipelines in a workspace"
+    aliases: [ls-pipelines]
+    example: |
+      dce amamba pipelines list-pipelines --workspace-id <ws>
+      dce amamba pipelines list-pipelines --workspace-id <ws> --name build- -o json
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-pipeline:
+    short: "Get a pipeline's configuration"
+    example: |
+      dce amamba pipelines get-pipeline --workspace-id <ws> --name my-pipeline
+
+  create-pipeline:
+    short: "Create a new pipeline (Jenkins-based)"
+    example: |
+      dce amamba pipelines create-pipeline --workspace-id <ws> --name my-pipeline --file pipeline.yaml
+
+  update-pipeline:
+    short: "Update a pipeline's configuration"
+    example: |
+      dce amamba pipelines update-pipeline --workspace-id <ws> --name my-pipeline --file pipeline.yaml
+
+  update-pipeline-name:
+    short: "Rename a pipeline"
+    example: |
+      dce amamba pipelines update-pipeline-name --workspace-id <ws> --name old-name --new-name new-name
+
+  delete-pipeline:
+    short: "Delete a pipeline"
+    example: |
+      dce amamba pipelines delete-pipeline --workspace-id <ws> --name my-pipeline
+
+  toggle-pipeline:
+    short: "Enable or disable a pipeline"
+    example: |
+      dce amamba pipelines toggle-pipeline --workspace-id <ws> --name my-pipeline --enabled true
+
+  replicate-pipeline:
+    short: "Copy a pipeline (optionally into another workspace)"
+    example: |
+      dce amamba pipelines replicate-pipeline --workspace-id <ws> --name src --new-name dst
+
+  list-pipeline-runs:
+    short: "List historical pipeline runs"
+    aliases: [ls-runs]
+    example: |
+      dce amamba pipelines list-pipeline-runs --workspace-id <ws> --pipeline my-pipeline
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-pipeline-run:
+    short: "Get a single pipeline run's metadata"
+    example: |
+      dce amamba pipelines get-pipeline-run --workspace-id <ws> --pipeline my-pipeline --run 42
+
+  get-pipeline-run-log:
+    short: "Get a pipeline run's full log"
+    aliases: [run-log]
+    example: |
+      dce amamba pipelines get-pipeline-run-log --workspace-id <ws> --pipeline my-pipeline --run 42
+
+  get-pipeline-run-step-log:
+    short: "Get a single step's log from a pipeline run"
+    example: |
+      dce amamba pipelines get-pipeline-run-step-log --workspace-id <ws> --pipeline my-pipeline --run 42 --step build
+
+  cancel-pipeline-run:
+    short: "Cancel an in-progress pipeline run"
+    example: |
+      dce amamba pipelines cancel-pipeline-run --workspace-id <ws> --pipeline my-pipeline --run 42
+
+  replay-pipeline-run:
+    short: "Replay a pipeline run from scratch"
+    example: |
+      dce amamba pipelines replay-pipeline-run --workspace-id <ws> --pipeline my-pipeline --run 42
+
+  restart-pipeline-run-node:
+    short: "Restart a single node (stage) in a pipeline run"
+    example: |
+      dce amamba pipelines restart-pipeline-run-node --workspace-id <ws> --pipeline my-pipeline --run 42 --node stage-1
+
+  get-pipeline-run-parameters:
+    short: "Get the parameters used by a pipeline run"
+    example: |
+      dce amamba pipelines get-pipeline-run-parameters --workspace-id <ws> --pipeline my-pipeline --run 42
+
+  get-pipeline-artifacts:
+    short: "List artifacts produced by a pipeline run"
+    example: |
+      dce amamba pipelines get-pipeline-artifacts --workspace-id <ws> --pipeline my-pipeline --run 42
+
+  patch-pipeline-parameters:
+    short: "Update parameters of a pipeline run mid-flight"
+    example: |
+      dce amamba pipelines patch-pipeline-parameters --workspace-id <ws> --pipeline my-pipeline --run 42 --file params.json
+
+  list-pipeline-volumes:
+    short: "List pipeline workspace volumes (PVCs)"
+    example: |
+      dce amamba pipelines list-pipeline-volumes --workspace-id <ws>
+
+  create-pipeline-volume:
+    short: "Create a persistent volume for pipeline workspaces"
+    example: |
+      dce amamba pipelines create-pipeline-volume --workspace-id <ws> --name cache --size 10Gi
+
+  sync-pipeline:
+    short: "Force a pipeline sync from the underlying Jenkins"
+    example: |
+      dce amamba pipelines sync-pipeline --workspace-id <ws> --name my-pipeline
+
+  # ── GitOps (ArgoCD) ──────────────────────────────────────────────────
+  list-override-policies:
+    short: "List GitOps override policies for a kairship instance"
+    example: |
+      dce amamba gitops list-override-policies --workspace-id <ws> --instance <i> --namespace <ns>
+
+  get-override-policy:
+    short: "Get a single override policy"
+    example: |
+      dce amamba gitops get-override-policy --workspace-id <ws> --instance <i> --namespace <ns> --name <name>
+
+  list-propagation-policies:
+    short: "List GitOps propagation policies for a kairship instance"
+    example: |
+      dce amamba gitops list-propagation-policies --workspace-id <ws> --instance <i> --namespace <ns>
+
+  get-propagation-policy:
+    short: "Get a single propagation policy"
+    example: |
+      dce amamba gitops get-propagation-policy --workspace-id <ws> --instance <i> --namespace <ns> --name <name>
+
+  list-kairship-instance:
+    short: "List kairship multi-cluster instances"
+    example: |
+      dce amamba gitops list-kairship-instance --workspace-id <ws>
+
+  list-kairship-instance-bound-namespaces:
+    short: "List namespaces bound to a kairship instance"
+    example: |
+      dce amamba gitops list-kairship-instance-bound-namespaces --workspace-id <ws> --instance <i>
+
+  sync-application:
+    short: "Trigger a GitOps sync for an application"
+    example: |
+      dce amamba gitops sync-application --workspace-id <ws> --name my-app
+
+  terminate-application-sync:
+    short: "Terminate an in-flight GitOps sync"
+    example: |
+      dce amamba gitops terminate-application-sync --workspace-id <ws> --name my-app
+
+  create-aggregation-resource:
+    short: "Create aggregation resources (override + propagation) for a kairship instance"
+    example: |
+      dce amamba aggregation create-aggregation-resource --workspace-id <ws> --instance <i> --namespace <ns> --file agg.json
+
+  # ── 灰度发布 (Rollouts) ──────────────────────────────────────────────
+  list-rollouts:
+    short: "List progressive-delivery rollouts"
+    aliases: [ls-rollouts]
+    example: |
+      dce amamba rollouts list-rollouts --workspace-id <ws>
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-rollout:
+    short: "Get a rollout's spec and current wave"
+    example: |
+      dce amamba rollouts get-rollout --workspace-id <ws> --name my-rollout
+
+  get-rollout-info:
+    short: "Get rollout runtime info (waves, canary status)"
+    example: |
+      dce amamba rollouts get-rollout-info --workspace-id <ws> --name my-rollout
+
+  create-rollout:
+    short: "Create a new rollout (canary / blue-green)"
+    example: |
+      dce amamba rollouts create-rollout --workspace-id <ws> --name my-rollout --file rollout.yaml
+
+  update-rollout:
+    short: "Update a rollout's spec"
+    example: |
+      dce amamba rollouts update-rollout --workspace-id <ws> --name my-rollout --file rollout.yaml
+
+  delete-rollout:
+    short: "Delete a rollout"
+    example: |
+      dce amamba rollouts delete-rollout --workspace-id <ws> --name my-rollout
+
+  abort-rollout:
+    short: "Abort an in-progress rollout"
+    example: |
+      dce amamba rollouts abort-rollout --workspace-id <ws> --name my-rollout
+
+  promote-rollout:
+    short: "Promote the next wave of a rollout"
+    example: |
+      dce amamba rollouts promote-rollout --workspace-id <ws> --name my-rollout
+
+  upgrade-rollout:
+    short: "Trigger a new rollout upgrade with a new image"
+    example: |
+      dce amamba rollouts upgrade-rollout --workspace-id <ws> --name my-rollout --image my-app:v2
+
+  undo-rollout:
+    short: "Roll back a rollout to its previous revision"
+    example: |
+      dce amamba rollouts undo-rollout --workspace-id <ws> --name my-rollout
+
+  list-rollout-containers:
+    short: "List containers involved in a rollout"
+    example: |
+      dce amamba rollouts list-rollout-containers --workspace-id <ws> --name my-rollout
+
+  # ── 凭证 (Credentials) ───────────────────────────────────────────────
+  list-credential:
+    short: "List credentials (Git, registry, Jenkins, etc.) in a workspace"
+    aliases: [ls-creds]
+    example: |
+      dce amamba credentials list-credential --workspace-id <ws>
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-credential:
+    short: "Get a credential by name (secret value is not returned)"
+    example: |
+      dce amamba credentials get-credential --workspace-id <ws> --name github-pat
+
+  create-credential:
+    short: "Create a credential (interactive prompts for the secret)"
+    example: |
+      dce amamba credentials create-credential --workspace-id <ws> --name github-pat --type git --interactive
+
+  update-credential:
+    short: "Update a credential's metadata or rotate its secret"
+    example: |
+      dce amamba credentials update-credential --workspace-id <ws> --name github-pat --interactive
+
+  delete-credential:
+    short: "Delete a credential"
+    example: |
+      dce amamba credentials delete-credential --workspace-id <ws> --name github-pat
+
+  # ── Helm ─────────────────────────────────────────────────────────────
+  list-helm-charts:
+    short: "List Helm charts available in a workspace"
+    example: |
+      dce amamba helm list-helm-charts --workspace-id <ws>
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-helm-charts:
+    short: "Get a Helm chart by name"
+    example: |
+      dce amamba helm get-helm-charts --workspace-id <ws> --name my-chart
+
+  list-helm-release:
+    short: "List Helm releases deployed in the workspace"
+    example: |
+      dce amamba helm list-helm-release --workspace-id <ws>
+
+  get-helm-release:
+    short: "Get a Helm release by name"
+    example: |
+      dce amamba helm get-helm-release --workspace-id <ws> --name my-release
+
+  list-helm-repo:
+    short: "List configured Helm chart repositories"
+    example: |
+      dce amamba helm list-helm-repo --workspace-id <ws>
+
+  rendering-helm-chart-manifests:
+    short: "Render a Helm chart's manifests locally (dry-run)"
+    example: |
+      dce amamba helm rendering-helm-chart-manifests --workspace-id <ws> --name my-chart --version 1.2.3
+
+  get-helm-install-config:
+    short: "Get the install config of a deployed Helm release"
+    example: |
+      dce amamba helm get-helm-install-config --workspace-id <ws> --release my-release
+
+  # ── 多云 / 跨集群 (MutilCloudApplication) ────────────────────────────
+  list-mutil-cloud-deploy-target:
+    short: "List multi-cloud deploy targets"
+    example: |
+      dce amamba mutilcloudapplication list-mutil-cloud-deploy-target --workspace-id <ws>
+
+  list-deploy-targets:
+    short: "List available deploy targets (clusters) in a workspace"
+    example: |
+      dce amamba mutilcloudapplication list-deploy-targets --workspace-id <ws>
+
+  # ── 模板 (Management) ────────────────────────────────────────────────
+  list-templates:
+    short: "List application templates available in a workspace"
+    example: |
+      dce amamba management list-templates --workspace-id <ws>
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-template:
+    short: "Get a template's definition"
+    example: |
+      dce amamba management get-template --workspace-id <ws> --name my-template
+
+  create-template:
+    short: "Create a new application template"
+    example: |
+      dce amamba management create-template --workspace-id <ws> --name my-template --file template.yaml
+
+  update-template:
+    short: "Update a template"
+    example: |
+      dce amamba management update-template --workspace-id <ws> --name my-template --file template.yaml
+
+  delete-template:
+    short: "Delete a template"
+    example: |
+      dce amamba management delete-template --workspace-id <ws> --name my-template
+
+  enable-template:
+    short: "Enable a template for use in the workspace"
+    example: |
+      dce amamba management enable-template --workspace-id <ws> --name my-template
+
+  disable-template:
+    short: "Disable a template"
+    example: |
+      dce amamba management disable-template --workspace-id <ws> --name my-template
+
+  list-global-templates:
+    short: "List globally-shared application templates"
+    example: |
+      dce amamba management list-global-templates
+
+  # ── 全局构建参数 (GlobalBuildParameter) ───────────────────────────────
+  list-global-build-parameter:
+    short: "List global build parameters shared across pipelines"
+    example: |
+      dce amamba globalbuildparameter list-global-build-parameter
+
+  get-build-parameter:
+    short: "Get a build parameter by name"
+    example: |
+      dce amamba globalbuildparameter get-build-parameter --name REGISTRY
+
+  create-global-build-parameter:
+    short: "Create a new global build parameter"
+    example: |
+      dce amamba globalbuildparameter create-global-build-parameter --name REGISTRY --value docker.io
+
+  update-global-build-parameter:
+    short: "Update a global build parameter"
+    example: |
+      dce amamba globalbuildparameter update-global-build-parameter --name REGISTRY --value registry.example.com
+
+  delete-global-build-parameter:
+    short: "Delete a global build parameter"
+    example: |
+      dce amamba globalbuildparameter delete-global-build-parameter --name REGISTRY
+
+  # ── 工具链 / 凭证绑定 (Toolchain) ────────────────────────────────────
+  list-toolchain-resources:
+    short: "List toolchain resources bound to a workspace (Jenkins, SonarQube, etc.)"
+    example: |
+      dce amamba toolchain list-toolchain-resources --workspace-id <ws>
+
+  bind-toolchain-resources:
+    short: "Bind a toolchain resource (Jenkins / SonarQube / JFrog) to a workspace"
+    example: |
+      dce amamba toolchain bind-toolchain-resources --workspace-id <ws> --resource <id>
+
+  unbind-toolchain-resources:
+    short: "Unbind a toolchain resource from a workspace"
+    example: |
+      dce amamba toolchain unbind-toolchain-resources --workspace-id <ws> --resource <id>
+
+  sync-toolchain-resources:
+    short: "Force re-sync of toolchain resources in a workspace"
+    example: |
+      dce amamba toolchain sync-toolchain-resources --workspace-id <ws>
+
+  # ── K8s 资源 CRUD（kairship 部署 / secret / cm）─────────────────────
+  list-secrets:
+    short: "List secrets in a kairship multi-cluster namespace"
+    aliases: [ls-secrets]
+    example: |
+      dce amamba core list-secrets --workspace-id <ws> --instance <i> --namespace <ns>
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  get-secret:
+    short: "Get a single kairship secret by name"
+    example: |
+      dce amamba core get-secret --workspace-id <ws> --instance <i> --namespace <ns> --name <name>
+
+  list-config-maps:
+    short: "List configmaps in a kairship multi-cluster namespace"
+    aliases: [ls-configmaps, ls-cm]
+    example: |
+      dce amamba core list-config-maps --workspace-id <ws> --instance <i> --namespace <ns>
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  delete-deployment:
+    short: "Delete a kairship deployment"
+    example: |
+      dce amamba apps delete-deployment --workspace-id <ws> --instance <i> --namespace <ns> --name <name>
+
+  list-pod-templates:
+    short: "List Jenkins agent pod templates (compute resources available to pipelines)"
+    example: |
+      dce amamba management list-pod-templates
+    params:
+      page:     { default: "1" }
+      pageSize: { default: "20" }
+
+  # ── 镜像 / 制品 (Image) ──────────────────────────────────────────────
+  get-image-info:
+    short: "Get details about a specific image (tag, digest, size, etc.)"
+    example: |
+      dce amamba image get-image-info --workspace-id <ws> --image nginx:1.25
+
+  # ── GitLab 集成 (GitLab) ─────────────────────────────────────────────
+  list-gitlab-project-branches:
+    short: "List branches of a GitLab project bound via a toolchain"
+    example: |
+      dce amamba gitlab list-gitlab-project-branches --workspace-id <ws> --toolchain-id <id> --project-id <pid>
+
+  list-gitlab-project-tags:
+    short: "List tags of a GitLab project bound via a toolchain"
+    example: |
+      dce amamba gitlab list-gitlab-project-tags --workspace-id <ws> --toolchain-id <id> --project-id <pid>
+
+  list-gitlab-all-branches-and-tags:
+    short: "List all branches and tags of a GitLab project in one call"
+    aliases: [list-git-refs]
+    example: |
+      dce amamba gitlab list-gitlab-all-branches-and-tags --workspace-id <ws> --toolchain-id <id> --project-id <pid>
+
+  # ── Jira 集成 (Jira) ────────────────────────────────────────────────
+  list-jira-project-issues:
+    short: "List issues of a Jira project bound via a toolchain"
+    example: |
+      dce amamba jira list-jira-project-issues --workspace-id <ws> --jira-id <id> --project-id <pid>
+
+  list-jira-projects-search-keywords:
+    short: "List Jira search keywords (assignees, labels) for a project"
+    example: |
+      dce amamba jira list-jira-projects-search-keywords --workspace-id <ws> --jira-id <id> --project-id <pid>
+
+  # ── 灰度发布辅助 (Rollouts) ─────────────────────────────────────────
+  list-ingress-names:
+    short: "List ingress names available for a rollout in a cluster/namespace"
+    example: |
+      dce amamba rollouts list-ingress-names --workspace-id <ws> --cluster <c> --namespace <ns>
