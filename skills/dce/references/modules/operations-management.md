@@ -23,7 +23,12 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--search` (query): Fuzzy search keyword
 - Output: list path `items`; columns `cluster`, `nodeCount`; pagination `offset`
-- Example: `dce operations-management fee list-clusters-fee --page 1 --page-size 20 dce operations-management fee list-clusters-fee --start 2026-05-01 --end 2026-05-28 --search prod -o json`
+- Example:
+
+```
+dce operations-management fee list-clusters-fee --page 1 --page-size 20
+dce operations-management fee list-clusters-fee --start 2026-05-01 --end 2026-05-28 --search prod -o json
+```
 
 ### `dce operations-management fee list-namespaces-fee`
 
@@ -39,7 +44,12 @@
   - `--search` (query): Fuzzy search keyword
   - `--workspace` (query): Filter by workspace name or ID
 - Output: list path `items`; columns `namespace`, `cluster`, `podCount`, `workspace`; pagination `offset`
-- Example: `dce operations-management fee list-namespaces-fee --workspace <workspace> --page 1 --page-size 20 dce operations-management fee list-namespaces-fee --start 2026-05-01 --end 2026-05-28 -o json`
+- Example:
+
+```
+dce operations-management fee list-namespaces-fee --workspace <workspace> --page 1 --page-size 20
+dce operations-management fee list-namespaces-fee --start 2026-05-01 --end 2026-05-28 -o json
+```
 
 ### `dce operations-management fee list-nodes-fee`
 
@@ -55,7 +65,12 @@
   - `--search` (query): Fuzzy search keyword
   - `--cluster` (query): Filter by cluster name or ID
 - Output: list path `items`; columns `type`, `cluster`, `ip`, `node`; pagination `offset`
-- Example: `dce operations-management fee list-nodes-fee --cluster <cluster> --page 1 --page-size 20 dce operations-management fee list-nodes-fee --start 2026-05-01 --end 2026-05-28 -o json`
+- Example:
+
+```
+dce operations-management fee list-nodes-fee --cluster <cluster> --page 1 --page-size 20
+dce operations-management fee list-nodes-fee --start 2026-05-01 --end 2026-05-28 -o json
+```
 
 ### `dce operations-management fee list-pods-fee`
 
@@ -73,7 +88,12 @@
   - `--namespace` (query): Filter by namespace
   - `--cluster` (query): Filter by cluster name or ID
 - Output: list path `items`; columns `namespace`, `cluster`, `pod`, `workspace`; pagination `offset`
-- Example: `dce operations-management fee list-pods-fee --cluster <cluster> --namespace <namespace> --page 1 --page-size 20 dce operations-management fee list-pods-fee --workspace <workspace> --search app -o json`
+- Example:
+
+```
+dce operations-management fee list-pods-fee --cluster <cluster> --namespace <namespace> --page 1 --page-size 20
+dce operations-management fee list-pods-fee --workspace <workspace> --search app -o json
+```
 
 ### `dce operations-management fee list-workspaces-fee`
 
@@ -88,7 +108,12 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--search` (query): Fuzzy search keyword
 - Output: list path `items`; columns `namespaceCount`, `podCount`, `workspace`; pagination `offset`
-- Example: `dce operations-management fee list-workspaces-fee --page 1 --page-size 20 dce operations-management fee list-workspaces-fee --start 2026-05-01 --end 2026-05-28 --search team -o json`
+- Example:
+
+```
+dce operations-management fee list-workspaces-fee --page 1 --page-size 20
+dce operations-management fee list-workspaces-fee --start 2026-05-01 --end 2026-05-28 --search team -o json
+```
 
 ## PermissionService
 
@@ -116,7 +141,12 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--search` (query): Fuzzy search keyword
 - Output: list path `items`; columns `cluster`, `critical`, `info`, `ip`, `node`, `total`; pagination `offset`
-- Example: `dce operations-management report list-alarms --page 1 --page-size 20 dce operations-management report list-alarms --start 2026-05-01 --end 2026-05-28 --search warning -o json`
+- Example:
+
+```
+dce operations-management report list-alarms --page 1 --page-size 20
+dce operations-management report list-alarms --start 2026-05-01 --end 2026-05-28 --search warning -o json
+```
 
 ### `dce operations-management report list-audit-resources`
 
@@ -131,7 +161,12 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--search` (query): Fuzzy search keyword
 - Output: list path `items`; columns `event`, `resourceType`, `total`; pagination `offset`
-- Example: `dce operations-management report list-audit-resources --page 1 --page-size 20 dce operations-management report list-audit-resources --start 2026-05-01 --end 2026-05-28 --search delete -o json`
+- Example:
+
+```
+dce operations-management report list-audit-resources --page 1 --page-size 20
+dce operations-management report list-audit-resources --start 2026-05-01 --end 2026-05-28 --search delete -o json
+```
 
 ### `dce operations-management report list-audit-users`
 
@@ -146,7 +181,12 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--search` (query): Fuzzy search keyword
 - Output: list path `items`; columns `failed`, `success`, `total`, `username`; pagination `offset`
-- Example: `dce operations-management report list-audit-users --page 1 --page-size 20 dce operations-management report list-audit-users --start 2026-05-01 --end 2026-05-28 --search alice -o json`
+- Example:
+
+```
+dce operations-management report list-audit-users --page 1 --page-size 20
+dce operations-management report list-audit-users --start 2026-05-01 --end 2026-05-28 --search alice -o json
+```
 
 ### `dce operations-management report list-clusters`
 
@@ -161,7 +201,12 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--search` (query): Fuzzy search keyword
 - Output: list path `items`; columns `cluster`, `nodeCount`; pagination `offset`
-- Example: `dce operations-management report list-clusters --page 1 --page-size 20 dce operations-management report list-clusters --start 2026-05-01 --end 2026-05-28 --search prod -o json`
+- Example:
+
+```
+dce operations-management report list-clusters --page 1 --page-size 20
+dce operations-management report list-clusters --start 2026-05-01 --end 2026-05-28 --search prod -o json
+```
 
 ### `dce operations-management report list-namespaces`
 
@@ -177,7 +222,12 @@
   - `--search` (query): Fuzzy search keyword
   - `--workspace` (query): Filter by workspace name or ID
 - Output: list path `items`; columns `namespace`, `cluster`, `podCount`, `workspace`; pagination `offset`
-- Example: `dce operations-management report list-namespaces --workspace <workspace> --page 1 --page-size 20 dce operations-management report list-namespaces --start 2026-05-01 --end 2026-05-28 -o json`
+- Example:
+
+```
+dce operations-management report list-namespaces --workspace <workspace> --page 1 --page-size 20
+dce operations-management report list-namespaces --start 2026-05-01 --end 2026-05-28 -o json
+```
 
 ### `dce operations-management report list-nodes`
 
@@ -193,7 +243,12 @@
   - `--search` (query): Fuzzy search keyword
   - `--cluster` (query): Filter by cluster name or ID
 - Output: list path `items`; columns `type`, `cluster`, `ip`, `node`; pagination `offset`
-- Example: `dce operations-management report list-nodes --cluster <cluster> --page 1 --page-size 20 dce operations-management report list-nodes --start 2026-05-01 --end 2026-05-28 -o json`
+- Example:
+
+```
+dce operations-management report list-nodes --cluster <cluster> --page 1 --page-size 20
+dce operations-management report list-nodes --start 2026-05-01 --end 2026-05-28 -o json
+```
 
 ### `dce operations-management report list-pods`
 
@@ -211,7 +266,12 @@
   - `--namespace` (query): Filter by namespace
   - `--cluster` (query): Filter by cluster name or ID
 - Output: list path `items`; columns `namespace`, `cluster`, `pod`, `workspace`; pagination `offset`
-- Example: `dce operations-management report list-pods --cluster <cluster> --namespace <namespace> --page 1 --page-size 20 dce operations-management report list-pods --workspace <workspace> --search app -o json`
+- Example:
+
+```
+dce operations-management report list-pods --cluster <cluster> --namespace <namespace> --page 1 --page-size 20
+dce operations-management report list-pods --workspace <workspace> --search app -o json
+```
 
 ### `dce operations-management report list-workspaces`
 
@@ -226,5 +286,10 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--search` (query): Fuzzy search keyword
 - Output: list path `items`; columns `namespaceCount`, `podCount`, `workspace`; pagination `offset`
-- Example: `dce operations-management report list-workspaces --page 1 --page-size 20 dce operations-management report list-workspaces --start 2026-05-01 --end 2026-05-28 --search team -o json`
+- Example:
+
+```
+dce operations-management report list-workspaces --page 1 --page-size 20
+dce operations-management report list-workspaces --start 2026-05-01 --end 2026-05-28 --search team -o json
+```
 

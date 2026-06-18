@@ -18,6 +18,7 @@ Key fields:
 - `body`: request body requirement and media type.
 - `auth`: whether auth is required and which scopes are declared.
 - `output`: list path, default columns, response media type, pagination, and streaming hints.
+- `notes`, `prerequisites`, and `known_errors`: overlay-provided operation context that is not inferred from the API spec.
 
 ## Command Detail
 
