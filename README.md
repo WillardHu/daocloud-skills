@@ -38,65 +38,66 @@ make dev
 
 The `make dev` target installs `dce` to `/usr/local/bin` and symlinks `skills/dce` into `~/.agents/skills/dce`. After `make dev`, you can jump straight to [Usage](#usage); you do **not** need to run "Install the Skill" or "Install the CLI" below.
 
-## Install the Skill
+## Install the Skills
 
-Only needed if you want to install the `dce` skill into an AI agent environment **without** running `make dev`. This installs the skill only (it does **not** install the `dce` CLI binary).
+Only needed if you want to install this repository's skills into an AI agent environment **without** running `make dev`. This installs the skills only (it does **not** install the `dce` CLI binary).
 
-Install the `dce` skill globally:
+Install all skills globally (`--skill '*'` selects every skill in the repo):
 
 ```bash
-npx skills add daocloud/daocloud-skills -g
+npx skills add daocloud/daocloud-skills --skill '*' -g
 ```
 
 For non-interactive installs, add confirmation flags:
 
 ```bash
-npx -y skills add daocloud/daocloud-skills -g -y
+npx -y skills add daocloud/daocloud-skills --skill '*' -g -y
 ```
 
-The `-g` flag installs the skill into the selected agent's user-level skills directory, so it is available across projects. Omit `-g` if you want to install the skill only for the current project.
+The `-g` flag installs the skills into the selected agent's user-level skills directory, so they are available across projects. Omit `-g` if you want to install them only for the current project.
 
-This installs the skill only. The skill helps an AI agent use `dce`, but it does not install the `dce` CLI. Install the CLI separately before running DCE operations.
+This installs the skills only. They help an AI agent operate DCE, but do not install the `dce` CLI. Install the CLI separately before running DCE operations.
+
+`--skill '*'` installs **all** skills in the repo. To install only specific ones, pass their names instead, e.g. `--skill dce` (run the `--list` command below to see the available names).
 
 ### Install for a Specific Agent
 
-Use `--agent` to install the `dce` skill for a specific AI coding agent. Common client targets include:
+The CLI auto-detects installed agents and installs to them. Use `--agent` to target specific AI coding agents instead. Common client targets include:
 
 **Claude Code**
 
 ```bash
-npx skills add daocloud/daocloud-skills -g --skill dce --agent claude-code
+npx skills add daocloud/daocloud-skills --skill '*' -g --agent claude-code
 ```
 
 **Codex**
 
 ```bash
-npx skills add daocloud/daocloud-skills -g --skill dce --agent codex
+npx skills add daocloud/daocloud-skills --skill '*' -g --agent codex
 ```
 
 **Cursor**
 
 ```bash
-npx skills add daocloud/daocloud-skills -g --skill dce --agent cursor
+npx skills add daocloud/daocloud-skills --skill '*' -g --agent cursor
 ```
 
-Use `--agent` more than once to install the same skill into multiple agents:
+Use `--agent` more than once to install into multiple agents at once:
 
 ```bash
-npx skills add daocloud/daocloud-skills -g \
-  --skill dce \
+npx skills add daocloud/daocloud-skills --skill '*' -g \
   --agent claude-code \
   --agent codex \
   --agent cursor
 ```
 
-This installs the skill from the repository's default branch. To inspect available skills before installing:
+This installs from the repository's default branch. To inspect the available skills (and their names, for `--skill`) before installing:
 
 ```bash
 npx skills add daocloud/daocloud-skills --list
 ```
 
-To uninstall the global `dce` skill, use `remove` with the same agent target:
+To uninstall a skill, use `remove` with its name and the same agent target:
 
 ```bash
 npx skills remove -g dce --agent codex
