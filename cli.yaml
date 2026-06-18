@@ -9,3 +9,8 @@ auth:
     display:
       username_field: username
       fallback_field: email
+
+# Hand-authored Skill content appended onto the generated skill files
+# (e.g. the Module availability guidance in internal/skill-include/SKILL.md).
+skill:
+  include: internal/skill-include

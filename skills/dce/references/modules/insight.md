@@ -18,7 +18,23 @@
 - Body: required
 - Flags:
   - `--id` (path, required): required;
-- Example: `# rule.source 必填（METRIC_TPL | PROMQL | LOG_TPL | EVENT_TPL），见 create-group 说明 echo '{ "rule": { "name": "HighMem", "source": "PROMQL", "severity": "WARNING", "duration": "5m", "expr": "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1", "description": "memory low", "labels": {"team":"ops"}, "annotations": {"summary":"low memory on {{ $labels.instance }}"} } }' | dce insight alert add-group-rule --id <gid> --file -`
+- Example:
+
+```
+# rule.source 必填（METRIC_TPL | PROMQL | LOG_TPL | EVENT_TPL），见 create-group 说明
+echo '{
+  "rule": {
+    "name": "HighMem",
+    "source": "PROMQL",
+    "severity": "WARNING",
+    "duration": "5m",
+    "expr": "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1",
+    "description": "memory low",
+    "labels": {"team":"ops"},
+    "annotations": {"summary":"low memory on {{ $labels.instance }}"}
+  }
+}' | dce insight alert add-group-rule --id <gid> --file -
+```
 
 ### `dce insight alert clean-alert-history`
 
@@ -47,7 +63,18 @@
   - `--step` (query, int64): step unit is minute
   - `--group-by-type` (query): groupByType
 - Output: list path `data`; columns `end`, `start`
-- Example: `# ⚠️ --start 与 --end（unix 秒）必填，缺失返回 HTTP 400 "value must be greater than 0" # --step 单位为分钟，0 表示返回时间范围内的总数（不分桶） END=$(date +%s); START=$((END - 86400)) dce insight alert count-alert \ --cluster-name kpanda-global-cluster \ --severity CRITICAL \ --start $START --end $END --step 60 \ --group-by-type=true -o json`
+- Example:
+
+```
+# ⚠️ --start 与 --end（unix 秒）必填，缺失返回 HTTP 400 "value must be greater than 0"
+# --step 单位为分钟，0 表示返回时间范围内的总数（不分桶）
+END=$(date +%s); START=$((END - 86400))
+dce insight alert count-alert \
+  --cluster-name kpanda-global-cluster \
+  --severity CRITICAL \
+  --start $START --end $END --step 60 \
+  --group-by-type=true -o json
+```
 
 ### `dce insight alert create-group`
 
@@ -57,7 +84,44 @@
 - Body: required
 - Flags: none
 - Output: list path `notifyRepeatConfig`; columns `interval`, `severity`
-- Example: `# ⚠️ 关键字段： # clusterName 必填 # rules[].source 必填，枚举：METRIC_TPL | PROMQL | LOG_TPL | EVENT_TPL # - METRIC_TPL 从指标模板派生（rules[].metricTpl 等） # - PROMQL 自定义 PromQL 表达式（最常用，rules[].expr） # - LOG_TPL 日志告警（额外字段：rules[].logTpl 等） # - EVENT_TPL 事件告警 # 缺少 source 会创建失败（典型表现：rule source unknown） echo '{ "name": "node-health", "clusterName": "kpanda-global-cluster", "namespace": "insight-system", "description": "Node health alerts", "targetType": "NODE", "targets": ["*"], "receivers": [ {"type": "email", "names": ["ops-mail"]} ], "notifyRepeatConfig": [ {"severity": "CRITICAL", "interval": 300} ], "rules": [ { "name": "NodeDown", "source": "PROMQL", "description": "node unreachable for 5m", "severity": "CRITICAL", "duration": "5m", "expr": "up{job=\"node-exporter\"} == 0", "labels": {"team": "ops"}, "annotations": {"summary": "Node {{ $labels.instance }} down"} } ] }' | dce insight alert create-group --file -`
+- Example:
+
+```
+# ⚠️ 关键字段：
+#   clusterName  必填
+#   rules[].source 必填，枚举：METRIC_TPL | PROMQL | LOG_TPL | EVENT_TPL
+#     - METRIC_TPL  从指标模板派生（rules[].metricTpl 等）
+#     - PROMQL      自定义 PromQL 表达式（最常用，rules[].expr）
+#     - LOG_TPL     日志告警（额外字段：rules[].logTpl 等）
+#     - EVENT_TPL   事件告警
+#   缺少 source 会创建失败（典型表现：rule source unknown）
+echo '{
+  "name": "node-health",
+  "clusterName": "kpanda-global-cluster",
+  "namespace": "insight-system",
+  "description": "Node health alerts",
+  "targetType": "NODE",
+  "targets": ["*"],
+  "receivers": [
+    {"type": "email", "names": ["ops-mail"]}
+  ],
+  "notifyRepeatConfig": [
+    {"severity": "CRITICAL", "interval": 300}
+  ],
+  "rules": [
+    {
+      "name": "NodeDown",
+      "source": "PROMQL",
+      "description": "node unreachable for 5m",
+      "severity": "CRITICAL",
+      "duration": "5m",
+      "expr": "up{job=\"node-exporter\"} == 0",
+      "labels": {"team": "ops"},
+      "annotations": {"summary": "Node {{ $labels.instance }} down"}
+    }
+  ]
+}' | dce insight alert create-group --file -
+```
 
 ### `dce insight alert create-inhibition`
 
@@ -67,7 +131,21 @@
 - Body: required
 - Flags: none
 - Output: list path `equal`
-- Example: `echo '{ "name": "cluster-down-suppresses-node", "clusterName": "prod-1", "namespace": "insight-system", "description": "if cluster is down, suppress node-level alerts", "equal": ["clusterName"], "sourceMatchers": [{"type":"EQUAL","key":"alertname","value":"ClusterDown"}], "targetMatchers": [{"type":"EQUAL","key":"severity","value":"WARNING"}] }' | dce insight alert create-inhibition --file - # matches/sourceMatchers/targetMatchers 的 type 同 silence：EQUAL / NOT_EQUAL / REGEXP`
+- Example:
+
+```
+echo '{
+  "name": "cluster-down-suppresses-node",
+  "clusterName": "prod-1",
+  "namespace": "insight-system",
+  "description": "if cluster is down, suppress node-level alerts",
+  "equal": ["clusterName"],
+  "sourceMatchers": [{"type":"EQUAL","key":"alertname","value":"ClusterDown"}],
+  "targetMatchers": [{"type":"EQUAL","key":"severity","value":"WARNING"}]
+}' | dce insight alert create-inhibition --file -
+
+# matches/sourceMatchers/targetMatchers 的 type 同 silence：EQUAL / NOT_EQUAL / REGEXP
+```
 
 ### `dce insight alert create-provider`
 
@@ -76,7 +154,21 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `echo '{ "name": "aliyun-sms", "type": "aliyun", "template": "default", "aliyun": { "accessKeyId": "AKID...", "accessKeySecret": "SECRET...", "signName": "MyCompany", "templateCode": "SMS_123" } }' | dce insight alert create-provider --file -`
+- Example:
+
+```
+echo '{
+  "name": "aliyun-sms",
+  "type": "aliyun",
+  "template": "default",
+  "aliyun": {
+    "accessKeyId": "AKID...",
+    "accessKeySecret": "SECRET...",
+    "signName": "MyCompany",
+    "templateCode": "SMS_123"
+  }
+}' | dce insight alert create-provider --file -
+```
 
 ### `dce insight alert create-receiver`
 
@@ -85,7 +177,30 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `# Email receiver echo '{ "name": "ops-mail", "type": "email", "description": "ops mailing list", "email": {"to": ["ops@example.com"]} }' | dce insight alert create-receiver --file - # Webhook receiver with bearer token echo '{ "name": "my-webhook", "type": "webhook", "webhook": { "url": "https://hooks.example.com/insight", "httpConfig": { "bearerToken": "xxx", "tlsConfig": {"insecureSkipVerify": false} } } }' | dce insight alert create-receiver --file -`
+- Example:
+
+```
+# Email receiver
+echo '{
+  "name": "ops-mail",
+  "type": "email",
+  "description": "ops mailing list",
+  "email": {"to": ["ops@example.com"]}
+}' | dce insight alert create-receiver --file -
+
+# Webhook receiver with bearer token
+echo '{
+  "name": "my-webhook",
+  "type": "webhook",
+  "webhook": {
+    "url": "https://hooks.example.com/insight",
+    "httpConfig": {
+      "bearerToken": "xxx",
+      "tlsConfig": {"insecureSkipVerify": false}
+    }
+  }
+}' | dce insight alert create-receiver --file -
+```
 
 ### `dce insight alert create-rule-template`
 
@@ -95,7 +210,19 @@
 - Body: required
 - Flags: none
 - Output: list path `rules`; columns `name`, `description`, `duration`, `expr`, `logFilterCondition`, `logQueryString`
-- Example: `echo '{ "name": "node-basics", "description": "basic node alerts", "targetType": "NODE", "rules": [ {"name":"NodeDown","severity":"CRITICAL","duration":"5m","expr":"up == 0"}, {"name":"NodeHighLoad","severity":"WARNING","duration":"10m","expr":"node_load5 > 8"} ] }' | dce insight alert create-rule-template --file -`
+- Example:
+
+```
+echo '{
+  "name": "node-basics",
+  "description": "basic node alerts",
+  "targetType": "NODE",
+  "rules": [
+    {"name":"NodeDown","severity":"CRITICAL","duration":"5m","expr":"up == 0"},
+    {"name":"NodeHighLoad","severity":"WARNING","duration":"10m","expr":"node_load5 > 8"}
+  ]
+}' | dce insight alert create-rule-template --file -
+```
 
 ### `dce insight alert create-silence`
 
@@ -105,7 +232,26 @@
 - Body: required
 - Flags: none
 - Output: list path `matches`; columns `type`, `key`, `value`
-- Example: `# ⚠️ matches[].type 是枚举字符串，不是 "=" / "=~"。可选： # EQUAL | NOT_EQUAL | REGEXP | MATCH_TYPE_UNSPECIFIED echo '{ "name": "maint-window", "clusterName": "kpanda-global-cluster", "namespace": "insight-system", "description": "weekly maintenance", "matches": [ {"type": "EQUAL", "key": "alertname", "value": "HighCPU"}, {"type": "REGEXP", "key": "instance", "value": "node-.*"} ], "activeTimeInterval": { "weekdayRange": [0], "timeRanges": [{"start":"02:00","end":"04:00"}] } }' | dce insight alert create-silence --file -`
+- Example:
+
+```
+# ⚠️ matches[].type 是枚举字符串，不是 "=" / "=~"。可选：
+#   EQUAL | NOT_EQUAL | REGEXP | MATCH_TYPE_UNSPECIFIED
+echo '{
+  "name": "maint-window",
+  "clusterName": "kpanda-global-cluster",
+  "namespace": "insight-system",
+  "description": "weekly maintenance",
+  "matches": [
+    {"type": "EQUAL",  "key": "alertname", "value": "HighCPU"},
+    {"type": "REGEXP", "key": "instance",  "value": "node-.*"}
+  ],
+  "activeTimeInterval": {
+    "weekdayRange": [0],
+    "timeRanges": [{"start":"02:00","end":"04:00"}]
+  }
+}' | dce insight alert create-silence --file -
+```
 
 ### `dce insight alert create-template`
 
@@ -114,7 +260,22 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `echo '{ "name": "crit-email", "description": "critical alert template", "body": { "email": { "subject": "[CRITICAL] {{ .CommonLabels.alertname }}", "body": "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}" }, "dingtalk": "**[CRITICAL]** {{ .CommonLabels.alertname }}", "wecom": "[CRITICAL] {{ .CommonLabels.alertname }}" } }' | dce insight alert create-template --file -`
+- Example:
+
+```
+echo '{
+  "name": "crit-email",
+  "description": "critical alert template",
+  "body": {
+    "email": {
+      "subject": "[CRITICAL] {{ .CommonLabels.alertname }}",
+      "body": "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+    },
+    "dingtalk": "**[CRITICAL]** {{ .CommonLabels.alertname }}",
+    "wecom": "[CRITICAL] {{ .CommonLabels.alertname }}"
+  }
+}' | dce insight alert create-template --file -
+```
 
 ### `dce insight alert delete-group`
 
@@ -206,7 +367,12 @@
 - Flags:
   - `--id` (path, required, int64): id
   - `--resolved` (query): resolved
-- Example: `dce insight alert get-alert --id <alertId> dce insight alert get-alert --id <alertId> --resolved=true`
+- Example:
+
+```
+dce insight alert get-alert --id <alertId>
+dce insight alert get-alert --id <alertId> --resolved=true
+```
 
 ### `dce insight alert get-group`
 
@@ -217,7 +383,12 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `notifyRepeatConfig`; columns `interval`, `severity`
-- Example: `dce insight alert get-group --id <gid> dce insight alert get-group --id <gid> -o json`
+- Example:
+
+```
+dce insight alert get-group --id <gid>
+dce insight alert get-group --id <gid> -o json
+```
 
 ### `dce insight alert get-group-rule`
 
@@ -239,7 +410,12 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `equal`
-- Example: `dce insight alert get-inhibition --id <iid> dce insight alert get-inhibition --id <iid> -o json`
+- Example:
+
+```
+dce insight alert get-inhibition --id <iid>
+dce insight alert get-inhibition --id <iid> -o json
+```
 
 ### `dce insight alert get-provider`
 
@@ -249,7 +425,12 @@
 - Body: none
 - Flags:
   - `--name` (path, required): name
-- Example: `dce insight alert get-provider --name aliyun-sms dce insight alert get-provider --name aliyun-sms -o json`
+- Example:
+
+```
+dce insight alert get-provider --name aliyun-sms
+dce insight alert get-provider --name aliyun-sms -o json
+```
 
 ### `dce insight alert get-receiver`
 
@@ -260,7 +441,14 @@
 - Flags:
   - `--name` (path, required): name
   - `--type` (query, default `RECEIVER_TYPE_UNSPECIFIED`, one of: RECEIVER_TYPE_UNSPECIFIED|webhook|email|dingtalk|wecom|sms|message|lark): Required. webhook | email | dingtalk | wecom | sms | message | lark
-- Example: `# ⚠️ --type 必填（proto enum.defined_only），缺失返回 HTTP 400 "type cannot be empty" # type 取值：webhook | email | dingtalk | wecom | sms | message | lark dce insight alert get-receiver --name ops-mail --type email -o json dce insight alert get-receiver --name my-bot --type lark -o json`
+- Example:
+
+```
+# ⚠️ --type 必填（proto enum.defined_only），缺失返回 HTTP 400 "type cannot be empty"
+# type 取值：webhook | email | dingtalk | wecom | sms | message | lark
+dce insight alert get-receiver --name ops-mail --type email -o json
+dce insight alert get-receiver --name my-bot   --type lark  -o json
+```
 
 ### `dce insight alert get-rule-template`
 
@@ -271,7 +459,12 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `rules`; columns `name`, `description`, `duration`, `expr`, `logFilterCondition`, `logQueryString`
-- Example: `dce insight alert get-rule-template --id <rtid> dce insight alert get-rule-template --id <rtid> -o json`
+- Example:
+
+```
+dce insight alert get-rule-template --id <rtid>
+dce insight alert get-rule-template --id <rtid> -o json
+```
 
 ### `dce insight alert get-silence`
 
@@ -282,7 +475,12 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `matches`; columns `type`, `key`, `value`
-- Example: `dce insight alert get-silence --id <sid> dce insight alert get-silence --id <sid> -o json`
+- Example:
+
+```
+dce insight alert get-silence --id <sid>
+dce insight alert get-silence --id <sid> -o json
+```
 
 ### `dce insight alert get-smtp-status`
 
@@ -291,7 +489,12 @@
 - Auth: required
 - Body: none
 - Flags: none
-- Example: `dce insight alert get-smtp-status dce insight alert get-smtp-status -o json`
+- Example:
+
+```
+dce insight alert get-smtp-status
+dce insight alert get-smtp-status -o json
+```
 
 ### `dce insight alert get-template`
 
@@ -301,7 +504,12 @@
 - Body: none
 - Flags:
   - `--name` (path, required): name
-- Example: `dce insight alert get-template --name crit-email dce insight alert get-template --name crit-email -o json`
+- Example:
+
+```
+dce insight alert get-template --name crit-email
+dce insight alert get-template --name crit-email -o json
+```
 
 ### `dce insight alert list-alerts`
 
@@ -325,7 +533,16 @@
   - `--sorts` (query): sorts determines the data list order, support multiple sort option.
   - `--status` (query): filter by alert's status
 - Output: list path `items`; columns `namespace`, `id`, `builtin`, `clusterName`, `description`, `groupId`; pagination `offset`
-- Example: `# Active alerts in a cluster dce insight alert list-alerts --cluster-name prod-1 --severity CRITICAL # Alert history (resolved=true) dce insight alert list-alerts --resolved=true --page 1 --page-size 50 -o json # Filter by group / rule dce insight alert list-alerts --group-id <gid> --rule-name "HighCPU"`
+- Example:
+
+```
+# Active alerts in a cluster
+dce insight alert list-alerts --cluster-name prod-1 --severity CRITICAL
+# Alert history (resolved=true)
+dce insight alert list-alerts --resolved=true --page 1 --page-size 50 -o json
+# Filter by group / rule
+dce insight alert list-alerts --group-id <gid> --rule-name "HighCPU"
+```
 
 ### `dce insight alert list-group-rules`
 
@@ -342,7 +559,16 @@
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
   - `--sorts` (query): sorts determines the data list order, support multiple sort option.
 - Output: list path `items`; columns `name`, `id`, `createAt`, `description`, `duration`, `expr`; pagination `offset`
-- Example: `# All rules in a group dce insight alert list-group-rules --id <gid> # Filter by name + severity dce insight alert list-group-rules --id <gid> --name HighCPU --severity CRITICAL # Only firing rules, paged dce insight alert list-group-rules --id <gid> --status FIRING --page 1 --page-size 50 -o json`
+- Example:
+
+```
+# All rules in a group
+dce insight alert list-group-rules --id <gid>
+# Filter by name + severity
+dce insight alert list-group-rules --id <gid> --name HighCPU --severity CRITICAL
+# Only firing rules, paged
+dce insight alert list-group-rules --id <gid> --status FIRING --page 1 --page-size 50 -o json
+```
 
 ### `dce insight alert list-groups`
 
@@ -359,7 +585,16 @@
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
   - `--sorts` (query): sorts determines the data list order, support multiple sort option.
 - Output: list path `items`; columns `name`, `namespace`, `id`, `builtin`, `clusterName`, `createAt`; pagination `offset`
-- Example: `# All alert groups dce insight alert list-groups # Filter by name (fuzzy) within a cluster + namespace dce insight alert list-groups --name node --cluster-name prod-1 --namespace insight-system # Only built-in groups, page through results dce insight alert list-groups --builtin=true --page 1 --page-size 50 -o json`
+- Example:
+
+```
+# All alert groups
+dce insight alert list-groups
+# Filter by name (fuzzy) within a cluster + namespace
+dce insight alert list-groups --name node --cluster-name prod-1 --namespace insight-system
+# Only built-in groups, page through results
+dce insight alert list-groups --builtin=true --page 1 --page-size 50 -o json
+```
 
 ### `dce insight alert list-inhibitions`
 
@@ -375,7 +610,13 @@
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
   - `--sorts` (query): sorts determines the data list order, support multiple sort option.
 - Output: list path `items`; columns `name`, `namespace`, `id`, `clusterName`, `createAt`, `description`; pagination `offset`
-- Example: `dce insight alert list-inhibitions dce insight alert list-inhibitions --cluster-name prod-1 --namespace insight-system dce insight alert list-inhibitions --name cluster-down --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight alert list-inhibitions
+dce insight alert list-inhibitions --cluster-name prod-1 --namespace insight-system
+dce insight alert list-inhibitions --name cluster-down --page 1 --page-size 50 -o json
+```
 
 ### `dce insight alert list-providers`
 
@@ -390,7 +631,13 @@
   - `--sorts` (query): sorts determines the data list order, support multiple sort option.
   - `--exact-search` (query): exact search by name
 - Output: list path `items`; columns `name`, `type`, `createAt`, `template`, `updateAt`; pagination `offset`
-- Example: `dce insight alert list-providers dce insight alert list-providers --name aliyun --exact-search=true dce insight alert list-providers --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight alert list-providers
+dce insight alert list-providers --name aliyun --exact-search=true
+dce insight alert list-providers --page 1 --page-size 50 -o json
+```
 
 ### `dce insight alert list-receivers`
 
@@ -406,7 +653,16 @@
   - `--sorts` (query): sorts determines the data list order, support multiple sort option.
   - `--exact-search` (query): exact search by name
 - Output: list path `items`; columns `name`, `type`, `createAt`, `description`, `updateAt`; pagination `offset`
-- Example: `# All receivers dce insight alert list-receivers # Only email receivers, exact name match dce insight alert list-receivers --type email --name ops-mail --exact-search=true # Paged JSON output dce insight alert list-receivers --page 1 --page-size 50 -o json`
+- Example:
+
+```
+# All receivers
+dce insight alert list-receivers
+# Only email receivers, exact name match
+dce insight alert list-receivers --type email --name ops-mail --exact-search=true
+# Paged JSON output
+dce insight alert list-receivers --page 1 --page-size 50 -o json
+```
 
 ### `dce insight alert list-rule-template-summary`
 
@@ -417,7 +673,12 @@
 - Flags:
   - `--target-type` (query, default `TARGET_TYPE_UNSPECIFIED`, one of: TARGET_TYPE_UNSPECIFIED|GLOBAL|CLUSTER|NAMESPACE|NODE|DEPLOYMENT|STATEFULSET|DAEMONSET|POD): filter by target type
 - Output: list path `items`; columns `name`, `id`, `targetType`
-- Example: `dce insight alert list-rule-template-summary dce insight alert list-rule-template-summary --target-type CLUSTER -o json`
+- Example:
+
+```
+dce insight alert list-rule-template-summary
+dce insight alert list-rule-template-summary --target-type CLUSTER -o json
+```
 
 ### `dce insight alert list-rule-templates`
 
@@ -433,7 +694,13 @@
   - `--sorts` (query): sorts determines the data list order, support multiple sort option.
   - `--target-type` (query, default `TARGET_TYPE_UNSPECIFIED`, one of: TARGET_TYPE_UNSPECIFIED|GLOBAL|CLUSTER|NAMESPACE|NODE|DEPLOYMENT|STATEFULSET|DAEMONSET|POD): TARGET_TYPE_UNSPECIFIED | GLOBAL | CLUSTER | NAMESPACE | NODE | DEPLOYMENT | STATEFULSET | DAEMONSET | POD
 - Output: list path `items`; columns `name`, `id`, `count`, `createAt`, `description`, `targetType`; pagination `offset`
-- Example: `dce insight alert list-rule-templates dce insight alert list-rule-templates --target-type NODE --builtin=false dce insight alert list-rule-templates --name node --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight alert list-rule-templates
+dce insight alert list-rule-templates --target-type NODE --builtin=false
+dce insight alert list-rule-templates --name node --page 1 --page-size 50 -o json
+```
 
 ### `dce insight alert list-silences`
 
@@ -447,7 +714,16 @@
   - `--cluster-name` (query): clusterName
   - `--namespace` (query): namespace
 - Output: list path `items`; columns `name`, `namespace`, `id`, `clusterName`, `createAt`, `description`
-- Example: `# All silences (active and expired) dce insight alert list-silences # Only currently-active silences dce insight alert list-silences --expired=false # Filter by cluster + namespace dce insight alert list-silences --cluster-name prod-1 --namespace insight-system -o json`
+- Example:
+
+```
+# All silences (active and expired)
+dce insight alert list-silences
+# Only currently-active silences
+dce insight alert list-silences --expired=false
+# Filter by cluster + namespace
+dce insight alert list-silences --cluster-name prod-1 --namespace insight-system -o json
+```
 
 ### `dce insight alert list-template-summary`
 
@@ -463,7 +739,12 @@
   - `--exact-search` (query): exact search by name
   - `--builtin` (query): search builtin only
 - Output: list path `items`; columns `name`, `builtin`, `description`, `updateAt`; pagination `offset`
-- Example: `dce insight alert list-template-summary dce insight alert list-template-summary --builtin=true -o json`
+- Example:
+
+```
+dce insight alert list-template-summary
+dce insight alert list-template-summary --builtin=true -o json
+```
 
 ### `dce insight alert list-templates`
 
@@ -479,7 +760,13 @@
   - `--exact-search` (query): exact search by name
   - `--builtin` (query): search builtin only
 - Output: list path `items`; columns `name`, `builtin`, `createAt`, `description`, `updateAt`; pagination `offset`
-- Example: `dce insight alert list-templates dce insight alert list-templates --name crit --exact-search=false dce insight alert list-templates --builtin=true --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight alert list-templates
+dce insight alert list-templates --name crit --exact-search=false
+dce insight alert list-templates --builtin=true --page 1 --page-size 50 -o json
+```
 
 ### `dce insight alert preview-rule`
 
@@ -489,7 +776,17 @@
 - Body: required
 - Flags: none
 - Output: list path `matrix`
-- Example: `# rule.source 必填（同 create-group / add-group-rule）；params 时间为 unix 秒字符串 END=$(date +%s); START=$((END - 3600)) echo '{ "group": {"clusterName":"kpanda-global-cluster","targetType":"CLUSTER","targets":["*"]}, "rule": {"source":"PROMQL","expr":"vector(1)","duration":"1m","severity":"WARNING"}, "params":{"start":"'"$START"'","end":"'"$END"'","step":60} }' | dce insight alert preview-rule --file -`
+- Example:
+
+```
+# rule.source 必填（同 create-group / add-group-rule）；params 时间为 unix 秒字符串
+END=$(date +%s); START=$((END - 3600))
+echo '{
+  "group": {"clusterName":"kpanda-global-cluster","targetType":"CLUSTER","targets":["*"]},
+  "rule":  {"source":"PROMQL","expr":"vector(1)","duration":"1m","severity":"WARNING"},
+  "params":{"start":"'"$START"'","end":"'"$END"'","step":60}
+}' | dce insight alert preview-rule --file -
+```
 
 ### `dce insight alert preview-silence`
 
@@ -499,7 +796,17 @@
 - Body: required
 - Flags: none
 - Output: list path `items`; columns `namespace`, `id`, `builtin`, `clusterName`, `description`, `groupId`
-- Example: `# matches[].type 同 create-silence：EQUAL / NOT_EQUAL / REGEXP echo '{ "clusterName": "kpanda-global-cluster", "namespace": "insight-system", "size": "20", "matches": [{"type":"EQUAL","key":"alertname","value":"HighCPU"}] }' | dce insight alert preview-silence --file -`
+- Example:
+
+```
+# matches[].type 同 create-silence：EQUAL / NOT_EQUAL / REGEXP
+echo '{
+  "clusterName": "kpanda-global-cluster",
+  "namespace": "insight-system",
+  "size": "20",
+  "matches": [{"type":"EQUAL","key":"alertname","value":"HighCPU"}]
+}' | dce insight alert preview-silence --file -
+```
 
 ### `dce insight alert preview-template`
 
@@ -508,7 +815,20 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `# ⚠️ data 字段使用 commonLabels（驼峰），不是 labels；alerts[] 必填 # 模板里 {{ .CommonLabels.X }} 对应 body 输入的 data.commonLabels.X echo '{ "body": {"email":{"subject":"[T] {{ .CommonLabels.alertname }}","body":"x"}}, "data": { "status": "firing", "commonLabels": {"alertname":"HighCPU"}, "alerts": [{"status":"firing","labels":{"instance":"node1"},"annotations":{"summary":"cpu hot"}}] } }' | dce insight alert preview-template --file -`
+- Example:
+
+```
+# ⚠️ data 字段使用 commonLabels（驼峰），不是 labels；alerts[] 必填
+# 模板里 {{ .CommonLabels.X }} 对应 body 输入的 data.commonLabels.X
+echo '{
+  "body": {"email":{"subject":"[T] {{ .CommonLabels.alertname }}","body":"x"}},
+  "data": {
+    "status": "firing",
+    "commonLabels": {"alertname":"HighCPU"},
+    "alerts": [{"status":"firing","labels":{"instance":"node1"},"annotations":{"summary":"cpu hot"}}]
+  }
+}' | dce insight alert preview-template --file -
+```
 
 ### `dce insight alert test-receiver`
 
@@ -517,7 +837,15 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `echo '{ "name": "ops-mail", "type": "email", "email": {"to": ["ops@example.com"]} }' | dce insight alert test-receiver --file -`
+- Example:
+
+```
+echo '{
+  "name": "ops-mail",
+  "type": "email",
+  "email": {"to": ["ops@example.com"]}
+}' | dce insight alert test-receiver --file -
+```
 
 ### `dce insight alert update-group`
 
@@ -528,7 +856,16 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `notifyRepeatConfig`; columns `interval`, `severity`
-- Example: `echo '{ "description": "updated", "notificationTemplate": "default", "receivers": [{"type":"email","names":["ops-mail"]}], "notifyRepeatConfig": [{"severity":"WARNING","interval":600}] }' | dce insight alert update-group --id <gid> --file -`
+- Example:
+
+```
+echo '{
+  "description": "updated",
+  "notificationTemplate": "default",
+  "receivers": [{"type":"email","names":["ops-mail"]}],
+  "notifyRepeatConfig": [{"severity":"WARNING","interval":600}]
+}' | dce insight alert update-group --id <gid> --file -
+```
 
 ### `dce insight alert update-group-rule`
 
@@ -539,7 +876,17 @@
 - Flags:
   - `--id` (path, required): required; id is group id
   - `--name` (path, required): required;
-- Example: `echo '{ "source": "PROMQL", "severity": "CRITICAL", "duration": "10m", "expr": "rate(http_requests_total{code=~\"5..\"}[5m]) > 1", "description": "5xx rate too high" }' | dce insight alert update-group-rule --id <gid> --name HighErr --file -`
+- Example:
+
+```
+echo '{
+  "source":   "PROMQL",
+  "severity": "CRITICAL",
+  "duration": "10m",
+  "expr": "rate(http_requests_total{code=~\"5..\"}[5m]) > 1",
+  "description": "5xx rate too high"
+}' | dce insight alert update-group-rule --id <gid> --name HighErr --file -
+```
 
 ### `dce insight alert update-inhibition`
 
@@ -550,7 +897,16 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `equal`
-- Example: `echo '{ "description": "updated suppression", "equal": ["clusterName", "namespace"], "sourceMatchers": [{"type":"EQUAL", "key":"alertname","value":"ClusterDown"}], "targetMatchers": [{"type":"REGEXP","key":"severity","value":"WARNING|INFO"}] }' | dce insight alert update-inhibition --id <iid> --file -`
+- Example:
+
+```
+echo '{
+  "description": "updated suppression",
+  "equal": ["clusterName", "namespace"],
+  "sourceMatchers": [{"type":"EQUAL", "key":"alertname","value":"ClusterDown"}],
+  "targetMatchers": [{"type":"REGEXP","key":"severity","value":"WARNING|INFO"}]
+}' | dce insight alert update-inhibition --id <iid> --file -
+```
 
 ### `dce insight alert update-provider`
 
@@ -560,7 +916,20 @@
 - Body: required
 - Flags:
   - `--name` (path, required): name
-- Example: `echo '{ "type": "aliyun", "template": "default", "aliyun": { "accessKeyId": "AKID...", "accessKeySecret": "NEW_SECRET", "signName": "MyCompany", "templateCode": "SMS_456" } }' | dce insight alert update-provider --name aliyun-sms --file -`
+- Example:
+
+```
+echo '{
+  "type": "aliyun",
+  "template": "default",
+  "aliyun": {
+    "accessKeyId": "AKID...",
+    "accessKeySecret": "NEW_SECRET",
+    "signName": "MyCompany",
+    "templateCode": "SMS_456"
+  }
+}' | dce insight alert update-provider --name aliyun-sms --file -
+```
 
 ### `dce insight alert update-receiver`
 
@@ -570,7 +939,16 @@
 - Body: required
 - Flags:
   - `--name` (path, required): name
-- Example: `echo '{ "name": "ops-mail", "type": "email", "description": "updated mailing list", "email": {"to": ["ops@example.com", "oncall@example.com"]} }' | dce insight alert update-receiver --name ops-mail --file -`
+- Example:
+
+```
+echo '{
+  "name": "ops-mail",
+  "type": "email",
+  "description": "updated mailing list",
+  "email": {"to": ["ops@example.com", "oncall@example.com"]}
+}' | dce insight alert update-receiver --name ops-mail --file -
+```
 
 ### `dce insight alert update-rule-template`
 
@@ -581,7 +959,17 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `rules`; columns `name`, `description`, `duration`, `expr`, `logFilterCondition`, `logQueryString`
-- Example: `echo '{ "description": "updated node basics", "rules": [ {"name":"NodeDown","severity":"CRITICAL","duration":"10m","expr":"up == 0"}, {"name":"NodeHighLoad","severity":"WARNING","duration":"15m","expr":"node_load5 > 10"} ] }' | dce insight alert update-rule-template --id <rtid> --file -`
+- Example:
+
+```
+echo '{
+  "description": "updated node basics",
+  "rules": [
+    {"name":"NodeDown","severity":"CRITICAL","duration":"10m","expr":"up == 0"},
+    {"name":"NodeHighLoad","severity":"WARNING","duration":"15m","expr":"node_load5 > 10"}
+  ]
+}' | dce insight alert update-rule-template --id <rtid> --file -
+```
 
 ### `dce insight alert update-silence`
 
@@ -592,7 +980,21 @@
 - Flags:
   - `--id` (path, required): id
 - Output: list path `matches`; columns `type`, `key`, `value`
-- Example: `echo '{ "description": "extended maintenance window", "matches": [ {"type": "EQUAL", "key": "alertname", "value": "HighCPU"}, {"type": "REGEXP", "key": "instance", "value": "node-.*"} ], "activeTimeInterval": { "weekdayRange": [0, 6], "timeRanges": [{"start":"01:00","end":"05:00"}] } }' | dce insight alert update-silence --id <sid> --file -`
+- Example:
+
+```
+echo '{
+  "description": "extended maintenance window",
+  "matches": [
+    {"type": "EQUAL",  "key": "alertname", "value": "HighCPU"},
+    {"type": "REGEXP", "key": "instance",  "value": "node-.*"}
+  ],
+  "activeTimeInterval": {
+    "weekdayRange": [0, 6],
+    "timeRanges": [{"start":"01:00","end":"05:00"}]
+  }
+}' | dce insight alert update-silence --id <sid> --file -
+```
 
 ### `dce insight alert update-template`
 
@@ -602,7 +1004,19 @@
 - Body: required
 - Flags:
   - `--name` (path, required): name
-- Example: `echo '{ "description": "updated critical template", "body": { "email": { "subject": "[CRITICAL] {{ .CommonLabels.alertname }}", "body": "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}" } } }' | dce insight alert update-template --name crit-email --file -`
+- Example:
+
+```
+echo '{
+  "description": "updated critical template",
+  "body": {
+    "email": {
+      "subject": "[CRITICAL] {{ .CommonLabels.alertname }}",
+      "body":    "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+    }
+  }
+}' | dce insight alert update-template --name crit-email --file -
+```
 
 ### `dce insight alert validate-group`
 
@@ -612,7 +1026,15 @@
 - Body: required
 - Flags: none
 - Output: list path `errors`; columns `code`, `message`
-- Example: `echo '{ "clusterName": "prod-1", "namespace": "insight-system", "yamlString": "groups:\n- name: my\n rules:\n - alert: A\n expr: vector(1)\n" }' | dce insight alert validate-group --file -`
+- Example:
+
+```
+echo '{
+  "clusterName": "prod-1",
+  "namespace": "insight-system",
+  "yamlString": "groups:\n- name: my\n  rules:\n  - alert: A\n    expr: vector(1)\n"
+}' | dce insight alert validate-group --file -
+```
 
 ## Event
 
@@ -624,7 +1046,14 @@
 - Body: none
 - Flags: none
 - Output: list path `daemonSet`
-- Example: `dce insight event get-reasons -o json # 返回字段（每项为字符串数组）： # node / daemonSet / deployment / job / pod / statefulSet`
+- Example:
+
+```
+dce insight event get-reasons -o json
+
+# 返回字段（每项为字符串数组）：
+#   node / daemonSet / deployment / job / pod / statefulSet
+```
 
 ### `dce insight event query-event-context`
 
@@ -644,7 +1073,30 @@
   - `--before` (query, default `50`, int32): Optional.
   - `--after` (query, default `50`, int32): Optional.
 - Output: list path `items`; columns `metadata.name`, `metadata.namespace`, `type`, `metadata.creationTimestamp`, `action`, `clusterName`; pagination `cursor`
-- Example: `# 重要：filter.involve-object-kind 或 filter.involve-object-name 至少传一个， # 否则后端返回 HTTP 400。filter 在该接口只识别这两个字段。 # # 推荐流程：先用 query-events 取锚点，再用 jq 提取 timestamp / involveObject 作参数 EVENT=$(dce insight event query-events \ --cluster-name kpanda-global-cluster --namespace insight-system \ --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z \ --filter.type Warning --page 1 --page-size 1 -o json) TS=$(echo "$EVENT" | jq -r '.items[0].timestamp') NS=$(echo "$EVENT" | jq -r '.items[0].metadata.namespace') KIND=$(echo "$EVENT" | jq -r '.items[0].involveObject.kind') NAME=$(echo "$EVENT" | jq -r '.items[0].involveObject.name') dce insight event query-event-context \ --cluster-name kpanda-global-cluster --namespace "$NS" \ --timestamp "$TS" \ --filter.involve-object-kind "$KIND" \ --filter.involve-object-name "$NAME" \ --before 20 --after 20 -o json`
+- Example:
+
+```
+# 重要：filter.involve-object-kind 或 filter.involve-object-name 至少传一个，
+# 否则后端返回 HTTP 400。filter 在该接口只识别这两个字段。
+#
+# 推荐流程：先用 query-events 取锚点，再用 jq 提取 timestamp / involveObject 作参数
+EVENT=$(dce insight event query-events \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z \
+  --filter.type Warning --page 1 --page-size 1 -o json)
+
+TS=$(echo "$EVENT"   | jq -r '.items[0].timestamp')
+NS=$(echo "$EVENT"   | jq -r '.items[0].metadata.namespace')
+KIND=$(echo "$EVENT" | jq -r '.items[0].involveObject.kind')
+NAME=$(echo "$EVENT" | jq -r '.items[0].involveObject.name')
+
+dce insight event query-event-context \
+  --cluster-name kpanda-global-cluster --namespace "$NS" \
+  --timestamp "$TS" \
+  --filter.involve-object-kind "$KIND" \
+  --filter.involve-object-name "$NAME" \
+  --before 20 --after 20 -o json
+```
 
 ### `dce insight event query-event-count`
 
@@ -655,7 +1107,36 @@
 - Flags:
   - `--cluster-name` (path, required): Required.
 - Output: list path `items`
-- Example: `# filters 列表：每项对应一个聚合通道；响应 items 是与 filters 等长的 int64 计数数组。 # 字段说明（每个 filter）： # type Normal | Warning（可省，省略表示不限） # involveObjectKind 关联对象类型，如 Pod / Node / Deployment # reason 事件原因（精确） # involveObjectName 关联对象名（模糊） # message 消息体（模糊） # 若 filters 省略，服务端使用默认 6 个通道： # imagePullFail / healthyCheckFail / podFailed / # podFailedScheduling / containerRestartingFailed / podFailedMount echo '{ "namespace": "insight-system", "startTime": "2026-05-21T17:00:00Z", "endTime": "2026-05-21T18:00:00Z", "filters": [ {"type":"Warning","involveObjectKind":"Pod","reason":"FailedScheduling"}, {"type":"Warning","involveObjectKind":"Node"} ] }' | dce insight event query-event-count --cluster-name kpanda-global-cluster --file - # 使用默认 filters（不传 filters 字段） echo '{ "namespace": "insight-system", "startTime": "2026-05-21T17:00:00Z", "endTime": "2026-05-21T18:00:00Z" }' | dce insight event query-event-count --cluster-name kpanda-global-cluster --file -`
+- Example:
+
+```
+# filters 列表：每项对应一个聚合通道；响应 items 是与 filters 等长的 int64 计数数组。
+# 字段说明（每个 filter）：
+#   type               Normal | Warning（可省，省略表示不限）
+#   involveObjectKind  关联对象类型，如 Pod / Node / Deployment
+#   reason             事件原因（精确）
+#   involveObjectName  关联对象名（模糊）
+#   message            消息体（模糊）
+# 若 filters 省略，服务端使用默认 6 个通道：
+#   imagePullFail / healthyCheckFail / podFailed /
+#   podFailedScheduling / containerRestartingFailed / podFailedMount
+echo '{
+  "namespace": "insight-system",
+  "startTime": "2026-05-21T17:00:00Z",
+  "endTime":   "2026-05-21T18:00:00Z",
+  "filters": [
+    {"type":"Warning","involveObjectKind":"Pod","reason":"FailedScheduling"},
+    {"type":"Warning","involveObjectKind":"Node"}
+  ]
+}' | dce insight event query-event-count --cluster-name kpanda-global-cluster --file -
+
+# 使用默认 filters（不传 filters 字段）
+echo '{
+  "namespace": "insight-system",
+  "startTime": "2026-05-21T17:00:00Z",
+  "endTime":   "2026-05-21T18:00:00Z"
+}' | dce insight event query-event-count --cluster-name kpanda-global-cluster --file -
+```
 
 ### `dce insight event query-event-filter-options`
 
@@ -669,7 +1150,17 @@
   - `--end-time` (query): endTime e.g. 2006-01-02T15:04:05.999999999Z07:00
   - `--namespace` (query): Optional.
 - Output: list path `involvedObjectKinds`
-- Example: `dce insight event query-event-filter-options \ --cluster-name kpanda-global-cluster --namespace insight-system \ --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z -o json # 返回字段： # involvedObjectKinds 当前窗口内出现过的对象类型（注意是 involvedObjectKinds，而事件对象本身用 involveObject） # reasons 当前窗口内出现过的 reason 列表`
+- Example:
+
+```
+dce insight event query-event-filter-options \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z -o json
+
+# 返回字段：
+#   involvedObjectKinds  当前窗口内出现过的对象类型（注意是 involvedObjectKinds，而事件对象本身用 involveObject）
+#   reasons              当前窗口内出现过的 reason 列表
+```
 
 ### `dce insight event query-event-histogram`
 
@@ -684,7 +1175,21 @@
   - `--interval` (query): interval e.g 1440s
   - `--namespace` (query): Optional.
 - Output: list path `items`; columns `normalCount`, `timestamp`, `warningCount`
-- Example: `dce insight event query-event-histogram \ --cluster-name kpanda-global-cluster --namespace insight-system \ --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z \ --interval 60s -o json # 返回结构： # items[].timestamp 桶起点 (RFC3339) # items[].normalCount Normal 事件数 # items[].warningCount Warning 事件数 # totalNormal 窗口内 Normal 总数 # totalWarning 窗口内 Warning 总数`
+- Example:
+
+```
+dce insight event query-event-histogram \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z \
+  --interval 60s -o json
+
+# 返回结构：
+#   items[].timestamp     桶起点 (RFC3339)
+#   items[].normalCount   Normal 事件数
+#   items[].warningCount  Warning 事件数
+#   totalNormal           窗口内 Normal 总数
+#   totalWarning          窗口内 Warning 总数
+```
 
 ### `dce insight event query-events`
 
@@ -706,7 +1211,36 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `metadata.name`, `metadata.namespace`, `type`, `metadata.creationTimestamp`, `action`, `clusterName`; pagination `offset`
-- Example: `# 最近 1 小时 insight-system 命名空间内的 Warning 事件 dce insight event query-events \ --cluster-name kpanda-global-cluster --namespace insight-system \ --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z \ --filter.type Warning \ --page 1 --page-size 50 -o json # 按 reason + involveObject + message 模糊过滤 dce insight event query-events \ --cluster-name kpanda-global-cluster --namespace insight-system \ --filter.reason FailedScheduling \ --filter.involve-object-kind Pod \ --filter.involve-object-name insight-server \ --filter.message 'insufficient memory' \ --sort 'timestamp,desc' # 返回结构（items 数组每条）： # timestamp 唯一主键，RFC3339Nano，可作 query-event-context 的 --timestamp # type Normal | Warning # reason / message / action / count / firstTimestamp / lastTimestamp # metadata.namespace 命名空间 # metadata.name / uid 事件资源元信息 # involveObject.kind 关联对象类型 (注意：不是 involvedObject) # involveObject.name # involveObject.namespace # clusterName / clusterUuid`
+- Example:
+
+```
+# 最近 1 小时 insight-system 命名空间内的 Warning 事件
+dce insight event query-events \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --start-time 2026-05-21T17:00:00Z --end-time 2026-05-21T18:00:00Z \
+  --filter.type Warning \
+  --page 1 --page-size 50 -o json
+
+# 按 reason + involveObject + message 模糊过滤
+dce insight event query-events \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --filter.reason FailedScheduling \
+  --filter.involve-object-kind Pod \
+  --filter.involve-object-name insight-server \
+  --filter.message 'insufficient memory' \
+  --sort 'timestamp,desc'
+
+# 返回结构（items 数组每条）：
+#   timestamp                 唯一主键，RFC3339Nano，可作 query-event-context 的 --timestamp
+#   type                      Normal | Warning
+#   reason / message / action / count / firstTimestamp / lastTimestamp
+#   metadata.namespace        命名空间
+#   metadata.name / uid       事件资源元信息
+#   involveObject.kind        关联对象类型 (注意：不是 involvedObject)
+#   involveObject.name
+#   involveObject.namespace
+#   clusterName / clusterUuid
+```
 
 ## FeatureGate
 
@@ -718,7 +1252,15 @@
 - Body: none
 - Flags:
   - `--id` (path, required, one of: METRICS|LOGGING|TRACING|GRAPH_VIRTUAL_NODE|LOG_ALERT|NET_FLOW|EVENT|SLOW_SQL): id
-- Example: `# id must be one of: # METRICS | LOGGING | TRACING | GRAPH_VIRTUAL_NODE # LOG_ALERT | NET_FLOW | EVENT | SLOW_SQL dce insight featuregate get-feature-gate-by-id --id METRICS dce insight featuregate get-feature-gate-by-id --id SLOW_SQL -o json`
+- Example:
+
+```
+# id must be one of:
+#   METRICS | LOGGING | TRACING | GRAPH_VIRTUAL_NODE
+#   LOG_ALERT | NET_FLOW | EVENT | SLOW_SQL
+dce insight featuregate get-feature-gate-by-id --id METRICS
+dce insight featuregate get-feature-gate-by-id --id SLOW_SQL -o json
+```
 
 ### `dce insight featuregate get-feature-gates`
 
@@ -728,7 +1270,12 @@
 - Body: none
 - Flags: none
 - Output: list path `items`; columns `name`, `id`, `description`, `enabled`, `status`
-- Example: `dce insight featuregate get-feature-gates dce insight featuregate get-feature-gates -o json`
+- Example:
+
+```
+dce insight featuregate get-feature-gates
+dce insight featuregate get-feature-gates -o json
+```
 
 ## Insight
 
@@ -740,7 +1287,12 @@
 - Body: none
 - Flags: none
 - Output: list path `errorRateThresholds`
-- Example: `dce insight insight get-global-config dce insight insight get-global-config -o json`
+- Example:
+
+```
+dce insight insight get-global-config
+dce insight insight get-global-config -o json
+```
 
 ### `dce insight insight get-helm-install-config`
 
@@ -749,7 +1301,24 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `# Get install params for insight-agent chart dce insight insight get-helm-install-config \ --set chartName=insight-agent \ --set version=0.30.0 # With extra overrides echo '{ "chartName": "insight-agent", "version": "0.30.0", "extra": { "global.exporters.logging.enabled": true, "global.exporters.metrics.enabled": true } }' | dce insight insight get-helm-install-config --file -`
+- Example:
+
+```
+# Get install params for insight-agent chart
+dce insight insight get-helm-install-config \
+  --set chartName=insight-agent \
+  --set version=0.30.0
+
+# With extra overrides
+echo '{
+  "chartName": "insight-agent",
+  "version": "0.30.0",
+  "extra": {
+    "global.exporters.logging.enabled": true,
+    "global.exporters.metrics.enabled": true
+  }
+}' | dce insight insight get-helm-install-config --file -
+```
 
 ### `dce insight insight get-userinfo`
 
@@ -759,7 +1328,12 @@
 - Body: none
 - Flags: none
 - Output: list path `resourceTypes`
-- Example: `dce insight insight get-userinfo dce insight insight get-userinfo -o json`
+- Example:
+
+```
+dce insight insight get-userinfo
+dce insight insight get-userinfo -o json
+```
 
 ### `dce insight insight get-version`
 
@@ -768,7 +1342,12 @@
 - Auth: required
 - Body: none
 - Flags: none
-- Example: `dce insight insight get-version dce insight insight get-version -o json`
+- Example:
+
+```
+dce insight insight get-version
+dce insight insight get-version -o json
+```
 
 ### `dce insight insight update-global-config`
 
@@ -778,7 +1357,38 @@
 - Body: required
 - Flags: none
 - Output: list path `errorRateThresholds`
-- Example: `# Update retention windows and APM thresholds dce insight insight update-global-config \ --set logRetentionTime=7d \ --set k8sEventLogRetentionTime=7d \ --set skoalaLogRetentionTime=7d \ --set traceDataRetentionTime=15d \ --set vmStorageRetentionTime=30d \ --set alertHistoryRetentionTime=90 \ --set traceApdexThreshold=500ms \ --set slowSqlThreshold=1000 \ --set-str 'latencyThresholds[0]=500' \ --set-str 'latencyThresholds[1]=1000' \ --set-str 'errorRateThresholds[0]=0.01' \ --set-str 'errorRateThresholds[1]=0.05' # Or pass the full body via stdin echo '{ "logRetentionTime": "7d", "k8sEventLogRetentionTime": "7d", "skoalaLogRetentionTime": "7d", "traceDataRetentionTime": "15d", "vmStorageRetentionTime": "30d", "alertHistoryRetentionTime": 90, "traceApdexThreshold": "500ms", "slowSqlThreshold": 1000, "latencyThresholds": [500, 1000], "errorRateThresholds": [0.01, 0.05] }' | dce insight insight update-global-config --file -`
+- Example:
+
+```
+# Update retention windows and APM thresholds
+dce insight insight update-global-config \
+  --set logRetentionTime=7d \
+  --set k8sEventLogRetentionTime=7d \
+  --set skoalaLogRetentionTime=7d \
+  --set traceDataRetentionTime=15d \
+  --set vmStorageRetentionTime=30d \
+  --set alertHistoryRetentionTime=90 \
+  --set traceApdexThreshold=500ms \
+  --set slowSqlThreshold=1000 \
+  --set-str 'latencyThresholds[0]=500' \
+  --set-str 'latencyThresholds[1]=1000' \
+  --set-str 'errorRateThresholds[0]=0.01' \
+  --set-str 'errorRateThresholds[1]=0.05'
+
+# Or pass the full body via stdin
+echo '{
+  "logRetentionTime": "7d",
+  "k8sEventLogRetentionTime": "7d",
+  "skoalaLogRetentionTime": "7d",
+  "traceDataRetentionTime": "15d",
+  "vmStorageRetentionTime": "30d",
+  "alertHistoryRetentionTime": 90,
+  "traceApdexThreshold": "500ms",
+  "slowSqlThreshold": 1000,
+  "latencyThresholds": [500, 1000],
+  "errorRateThresholds": [0.01, 0.05]
+}' | dce insight insight update-global-config --file -
+```
 
 ## Log
 
@@ -789,7 +1399,57 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId) # 字段说明： # type 导出格式枚举：TEXT(默认) / CSV / JSON # maxLines 导出上限 [0,10000]，0 视为 2000 # fields 列枚举（TEXT/CSV 生效；JSON 输出完整记录），可选值： # Timestamp | Cluster | Namespace | Pod | Container | Node | File # sorts 仅支持 "time,desc"（默认）或 "time,asc" # timeZone 导出时间戳的 IANA 时区，如 "Asia/Shanghai" # queryLog 或 queryLogContext，二选一（结构同 query-log / query-log-context） echo '{ "type": "CSV", "maxLines": 5000, "fields": ["Timestamp", "Cluster", "Namespace", "Pod", "Container"], "sorts": ["time,asc"], "timeZone": "Asia/Shanghai", "queryLog": { "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "sorts": ["time,asc"], "resource": { "clusterFilter": ["'"$KUBESYSTEMID"'"], "namespaceFilter": ["insight-system"], "workloadFilter": ["insight-server"] } } }' | dce insight log download-log --file - # 导出某条日志的上下文窗口 echo '{ "type": "TEXT", "maxLines": 200, "fields": ["Timestamp", "Pod", "Container"], "queryLogContext": { "before": 100, "after": 100, "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "nanotimestamp": "2026-05-21T00:30:12.123456789Z", "resource": { "cluster": "'"$KUBESYSTEMID"'", "namespace": "insight-system", "pod": "insight-server-0", "container": "insight-server" } } }' | dce insight log download-log --file -`
+- Example:
+
+```
+KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId)
+
+# 字段说明：
+#   type            导出格式枚举：TEXT(默认) / CSV / JSON
+#   maxLines        导出上限 [0,10000]，0 视为 2000
+#   fields          列枚举（TEXT/CSV 生效；JSON 输出完整记录），可选值：
+#                   Timestamp | Cluster | Namespace | Pod | Container | Node | File
+#   sorts           仅支持 "time,desc"（默认）或 "time,asc"
+#   timeZone        导出时间戳的 IANA 时区，如 "Asia/Shanghai"
+#   queryLog        或 queryLogContext，二选一（结构同 query-log / query-log-context）
+echo '{
+  "type": "CSV",
+  "maxLines": 5000,
+  "fields": ["Timestamp", "Cluster", "Namespace", "Pod", "Container"],
+  "sorts": ["time,asc"],
+  "timeZone": "Asia/Shanghai",
+  "queryLog": {
+    "startTime": "2026-05-21T00:00:00.000000000Z",
+    "endTime":   "2026-05-21T01:00:00.000000000Z",
+    "sorts":     ["time,asc"],
+    "resource": {
+      "clusterFilter":   ["'"$KUBESYSTEMID"'"],
+      "namespaceFilter": ["insight-system"],
+      "workloadFilter":  ["insight-server"]
+    }
+  }
+}' | dce insight log download-log --file -
+
+# 导出某条日志的上下文窗口
+echo '{
+  "type": "TEXT",
+  "maxLines": 200,
+  "fields": ["Timestamp", "Pod", "Container"],
+  "queryLogContext": {
+    "before": 100,
+    "after":  100,
+    "startTime":     "2026-05-21T00:00:00.000000000Z",
+    "endTime":       "2026-05-21T01:00:00.000000000Z",
+    "nanotimestamp": "2026-05-21T00:30:12.123456789Z",
+    "resource": {
+      "cluster":   "'"$KUBESYSTEMID"'",
+      "namespace": "insight-system",
+      "pod":       "insight-server-0",
+      "container": "insight-server"
+    }
+  }
+}' | dce insight log download-log --file -
+```
 
 ### `dce insight log list-log-file-paths`
 
@@ -802,7 +1462,15 @@
   - `--cluster-name` (query): clusterName
   - `--node` (query): node
 - Output: list path `paths`
-- Example: `# 用集群名（服务端解析为 UUID） dce insight log list-log-file-paths --cluster-name kpanda-global-cluster --node node-1 # 或直接传 UUID KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId) dce insight log list-log-file-paths --cluster "$KUBESYSTEMID" --node node-1 -o json`
+- Example:
+
+```
+# 用集群名（服务端解析为 UUID）
+dce insight log list-log-file-paths --cluster-name kpanda-global-cluster --node node-1
+# 或直接传 UUID
+KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId)
+dce insight log list-log-file-paths --cluster "$KUBESYSTEMID" --node node-1 -o json
+```
 
 ### `dce insight log query-log`
 
@@ -812,7 +1480,67 @@
 - Body: required
 - Flags: none
 - Output: list path `items`; columns `log`, `timestamp`
-- Example: `# 1) 先拿到集群 UUID KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId) # 2) 容器日志：在 kpanda-global-cluster / insight-system 中检索包含 "error" 的日志 # 字段说明（resource filter）： # clusterFilter 集群 UUID 列表，必填且只能 1 个 # namespaceFilter 命名空间精确匹配（需配合 clusterFilter） # workloadFilter 工作负载精确匹配；workloadSearch 为模糊 # podFilter Pod 精确匹配；podSearch 为模糊 # containerFilter 容器精确匹配；containerSearch 为模糊 # logSearch 日志正文关键字（多值 AND） # traceIdSearch 精确匹配 trace_id # luceneFilter Lucene DSL，可选键： # kubernetes.namespace_name.keyword / kubernetes.pod_name.keyword / # kubernetes.container_name.keyword / trace_id.keyword / log # 顶层字段： # startTime/endTime RFC3339Nano，可空表示无界 # page/pageSize 分页（默认 1/10，pageSize 软上限 100） # sorts 仅支持 time 字段；格式 "time,desc" 或 "time,asc"，默认 "time,desc" echo '{ "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "page": 1, "pageSize": 100, "sorts": ["time,desc"], "resource": { "clusterFilter": ["'"$KUBESYSTEMID"'"], "namespaceFilter": ["insight-system"], "workloadFilter": ["insight-server"], "podSearch": ["insight-server"], "logSearch": ["error"], "luceneFilter": "kubernetes.container_name.keyword:insight-server AND log:error" } }' | dce insight log query-log --file - # 3) 系统日志（节点 syslog） # system filter 支持键：nodeFilter / fileFilter / logSearch / luceneFilter # luceneFilter 可用键：syslog.host.keyword / syslog.file.keyword / syslog.ident.keyword / log echo '{ "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "system": { "clusterFilter": ["'"$KUBESYSTEMID"'"], "nodeFilter": ["node-1"], "fileFilter": ["/var/log/messages"], "logSearch": ["oom"] } }' | dce insight log query-log --file - # 返回结构（items 数组每条）： # timestamp RFC3339Nano，可直接作为 query-log-context 的 nanotimestamp # log 日志正文 # labels.cluster 集群 UUID # labels.namespace 命名空间（resource filter 时） # labels.pod Pod 名称 # labels.container 容器名称 # labels.node / labels.file 节点 / 文件（system filter 时）`
+- Example:
+
+```
+# 1) 先拿到集群 UUID
+KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId)
+
+# 2) 容器日志：在 kpanda-global-cluster / insight-system 中检索包含 "error" 的日志
+# 字段说明（resource filter）：
+#   clusterFilter    集群 UUID 列表，必填且只能 1 个
+#   namespaceFilter  命名空间精确匹配（需配合 clusterFilter）
+#   workloadFilter   工作负载精确匹配；workloadSearch 为模糊
+#   podFilter        Pod 精确匹配；podSearch 为模糊
+#   containerFilter  容器精确匹配；containerSearch 为模糊
+#   logSearch        日志正文关键字（多值 AND）
+#   traceIdSearch    精确匹配 trace_id
+#   luceneFilter     Lucene DSL，可选键：
+#                    kubernetes.namespace_name.keyword / kubernetes.pod_name.keyword /
+#                    kubernetes.container_name.keyword / trace_id.keyword / log
+# 顶层字段：
+#   startTime/endTime  RFC3339Nano，可空表示无界
+#   page/pageSize      分页（默认 1/10，pageSize 软上限 100）
+#   sorts              仅支持 time 字段；格式 "time,desc" 或 "time,asc"，默认 "time,desc"
+echo '{
+  "startTime": "2026-05-21T00:00:00.000000000Z",
+  "endTime":   "2026-05-21T01:00:00.000000000Z",
+  "page": 1,
+  "pageSize": 100,
+  "sorts": ["time,desc"],
+  "resource": {
+    "clusterFilter":   ["'"$KUBESYSTEMID"'"],
+    "namespaceFilter": ["insight-system"],
+    "workloadFilter":  ["insight-server"],
+    "podSearch":       ["insight-server"],
+    "logSearch":       ["error"],
+    "luceneFilter":    "kubernetes.container_name.keyword:insight-server AND log:error"
+  }
+}' | dce insight log query-log --file -
+
+# 3) 系统日志（节点 syslog）
+# system filter 支持键：nodeFilter / fileFilter / logSearch / luceneFilter
+# luceneFilter 可用键：syslog.host.keyword / syslog.file.keyword / syslog.ident.keyword / log
+echo '{
+  "startTime": "2026-05-21T00:00:00.000000000Z",
+  "endTime":   "2026-05-21T01:00:00.000000000Z",
+  "system": {
+    "clusterFilter": ["'"$KUBESYSTEMID"'"],
+    "nodeFilter":    ["node-1"],
+    "fileFilter":    ["/var/log/messages"],
+    "logSearch":     ["oom"]
+  }
+}' | dce insight log query-log --file -
+
+# 返回结构（items 数组每条）：
+#   timestamp                 RFC3339Nano，可直接作为 query-log-context 的 nanotimestamp
+#   log                       日志正文
+#   labels.cluster            集群 UUID
+#   labels.namespace          命名空间（resource filter 时）
+#   labels.pod                Pod 名称
+#   labels.container          容器名称
+#   labels.node / labels.file 节点 / 文件（system filter 时）
+```
 
 ### `dce insight log query-log-context`
 
@@ -822,7 +1550,62 @@
 - Body: required
 - Flags: none
 - Output: list path `items`; columns `log`, `timestamp`
-- Example: `KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId) # 容器日志上下文 # 字段说明： # before/after 锚点前/后行数，范围 [0,10000]，至少一个 > 0 # nanotimestamp 锚点行的 RFC3339Nano 时间戳（必填） # startTime/endTime 搜索窗口（可选） # resource filter (全部必填)：cluster=集群 UUID, namespace, pod, container # # 推荐流程：先用 query-log 取锚点，再用 jq 提取 timestamp 与 labels.* 作为参数 LOG_RESULT=$(echo '{ "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "page": 1, "pageSize": 1, "resource": { "clusterFilter": ["'"$KUBESYSTEMID"'"], "logSearch": ["error"] } }' | dce insight log query-log --file - -o json) TS=$(echo "$LOG_RESULT" | jq -r '.items[0].timestamp') NS=$(echo "$LOG_RESULT" | jq -r '.items[0].labels.namespace') POD=$(echo "$LOG_RESULT" | jq -r '.items[0].labels.pod') CT=$(echo "$LOG_RESULT" | jq -r '.items[0].labels.container') echo '{ "before": 50, "after": 50, "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "nanotimestamp": "'"$TS"'", "resource": { "cluster": "'"$KUBESYSTEMID"'", "namespace": "'"$NS"'", "pod": "'"$POD"'", "container": "'"$CT"'" } }' | dce insight log query-log-context --file - # 系统日志上下文（system filter 三字段全部必填：cluster / node / file） echo '{ "before": 30, "after": 30, "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "nanotimestamp": "2026-05-21T00:30:12.123456789Z", "system": { "cluster": "'"$KUBESYSTEMID"'", "node": "node-1", "file": "/var/log/messages" } }' | dce insight log query-log-context --file -`
+- Example:
+
+```
+KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId)
+
+# 容器日志上下文
+# 字段说明：
+#   before/after    锚点前/后行数，范围 [0,10000]，至少一个 > 0
+#   nanotimestamp   锚点行的 RFC3339Nano 时间戳（必填）
+#   startTime/endTime  搜索窗口（可选）
+#   resource filter (全部必填)：cluster=集群 UUID, namespace, pod, container
+#
+# 推荐流程：先用 query-log 取锚点，再用 jq 提取 timestamp 与 labels.* 作为参数
+LOG_RESULT=$(echo '{
+  "startTime": "2026-05-21T00:00:00.000000000Z",
+  "endTime":   "2026-05-21T01:00:00.000000000Z",
+  "page": 1, "pageSize": 1,
+  "resource": {
+    "clusterFilter": ["'"$KUBESYSTEMID"'"],
+    "logSearch": ["error"]
+  }
+}' | dce insight log query-log --file - -o json)
+
+TS=$(echo "$LOG_RESULT" | jq -r '.items[0].timestamp')
+NS=$(echo "$LOG_RESULT" | jq -r '.items[0].labels.namespace')
+POD=$(echo "$LOG_RESULT" | jq -r '.items[0].labels.pod')
+CT=$(echo "$LOG_RESULT" | jq -r '.items[0].labels.container')
+
+echo '{
+  "before": 50,
+  "after":  50,
+  "startTime":     "2026-05-21T00:00:00.000000000Z",
+  "endTime":       "2026-05-21T01:00:00.000000000Z",
+  "nanotimestamp": "'"$TS"'",
+  "resource": {
+    "cluster":   "'"$KUBESYSTEMID"'",
+    "namespace": "'"$NS"'",
+    "pod":       "'"$POD"'",
+    "container": "'"$CT"'"
+  }
+}' | dce insight log query-log-context --file -
+
+# 系统日志上下文（system filter 三字段全部必填：cluster / node / file）
+echo '{
+  "before": 30,
+  "after":  30,
+  "startTime":     "2026-05-21T00:00:00.000000000Z",
+  "endTime":       "2026-05-21T01:00:00.000000000Z",
+  "nanotimestamp": "2026-05-21T00:30:12.123456789Z",
+  "system": {
+    "cluster": "'"$KUBESYSTEMID"'",
+    "node":    "node-1",
+    "file":    "/var/log/messages"
+  }
+}' | dce insight log query-log-context --file -
+```
 
 ### `dce insight log query-log-histogram`
 
@@ -832,7 +1615,26 @@
 - Body: required
 - Flags: none
 - Output: list path `items`; columns `count`, `timestamp`
-- Example: `KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId) # 字段说明： # startTime/endTime RFC3339Nano（必填） # interval ES date_histogram 间隔，如 "1m"/"5m"/"1h"（必填） # resource/system 与 query-log 相同的 filter 二选一 echo '{ "startTime": "2026-05-21T00:00:00.000000000Z", "endTime": "2026-05-21T01:00:00.000000000Z", "interval": "1m", "resource": { "clusterFilter": ["'"$KUBESYSTEMID"'"], "namespaceFilter": ["insight-system"], "logSearch": ["error"] } }' | dce insight log query-log-histogram --file -`
+- Example:
+
+```
+KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId)
+
+# 字段说明：
+#   startTime/endTime  RFC3339Nano（必填）
+#   interval           ES date_histogram 间隔，如 "1m"/"5m"/"1h"（必填）
+#   resource/system    与 query-log 相同的 filter 二选一
+echo '{
+  "startTime": "2026-05-21T00:00:00.000000000Z",
+  "endTime":   "2026-05-21T01:00:00.000000000Z",
+  "interval":  "1m",
+  "resource": {
+    "clusterFilter":   ["'"$KUBESYSTEMID"'"],
+    "namespaceFilter": ["insight-system"],
+    "logSearch":       ["error"]
+  }
+}' | dce insight log query-log-histogram --file -
+```
 
 ### `dce insight log search-log`
 
@@ -843,7 +1645,32 @@
 - Flags:
   - `--index` (query): index
   - `--query` (query): query
-- Example: `# --index 传 ILM 索引后缀（服务端会补前缀），常用 "insight-logs-*" # --query 必须是合法的 ES DSL JSON 字符串 dce insight log search-log \ --index 'insight-logs-*' \ --query '{"query":{"match":{"log":"timeout"}}}' # 在 insight-system 命名空间内查最近 1h 含 "error" 的日志 dce insight log search-log \ --index 'insight-logs-*' \ --query '{ "size": 100, "sort": [{"@timestamp":"desc"}], "query": { "bool": { "must": [{"match": {"log": "error"}}], "filter": [ {"term": {"kubernetes.namespace_name.keyword": "insight-system"}}, {"range": {"@timestamp": {"gte": "now-1h", "lte": "now"}}} ] } } }' -o json`
+- Example:
+
+```
+# --index 传 ILM 索引后缀（服务端会补前缀），常用 "insight-logs-*"
+# --query 必须是合法的 ES DSL JSON 字符串
+dce insight log search-log \
+  --index 'insight-logs-*' \
+  --query '{"query":{"match":{"log":"timeout"}}}'
+
+# 在 insight-system 命名空间内查最近 1h 含 "error" 的日志
+dce insight log search-log \
+  --index 'insight-logs-*' \
+  --query '{
+    "size": 100,
+    "sort": [{"@timestamp":"desc"}],
+    "query": {
+      "bool": {
+        "must":   [{"match": {"log": "error"}}],
+        "filter": [
+          {"term":  {"kubernetes.namespace_name.keyword": "insight-system"}},
+          {"range": {"@timestamp": {"gte": "now-1h", "lte": "now"}}}
+        ]
+      }
+    }
+  }' -o json
+```
 
 ## Metric
 
@@ -855,7 +1682,34 @@
 - Body: required
 - Flags: none
 - Output: list path `data`; columns `errorMessage`, `status`
-- Example: `# matchLabel 字段说明： # clusterName 集群名（与 cluster 二选一） # cluster 集群 UUID（与 clusterName 二选一） # namespace 可选 # extraLabel 附加 label 过滤（map<string,string>），会注入到每条 query # param.time unix 秒 # queryList PromQL 数组，非空 echo '{ "matchLabel": { "clusterName": "kpanda-global-cluster", "namespace": "insight-system" }, "param": {"time": '"$(date +%s)"'}, "queryList": [ "up", "sum(rate(container_cpu_usage_seconds_total[5m]))" ] }' | dce insight metric batch-query-metric --file - -o json # 返回结构： # data[].data.vector[] 与 query-metric 同结构 # data[].status SUCCESS | FAIL # data[].errorMessage 失败时的错误信息 # data 数组按 queryList 顺序一一对应。`
+- Example:
+
+```
+# matchLabel 字段说明：
+#   clusterName  集群名（与 cluster 二选一）
+#   cluster      集群 UUID（与 clusterName 二选一）
+#   namespace    可选
+#   extraLabel   附加 label 过滤（map<string,string>），会注入到每条 query
+# param.time     unix 秒
+# queryList      PromQL 数组，非空
+echo '{
+  "matchLabel": {
+    "clusterName": "kpanda-global-cluster",
+    "namespace":   "insight-system"
+  },
+  "param": {"time": '"$(date +%s)"'},
+  "queryList": [
+    "up",
+    "sum(rate(container_cpu_usage_seconds_total[5m]))"
+  ]
+}' | dce insight metric batch-query-metric --file - -o json
+
+# 返回结构：
+#   data[].data.vector[]  与 query-metric 同结构
+#   data[].status         SUCCESS | FAIL
+#   data[].errorMessage   失败时的错误信息
+# data 数组按 queryList 顺序一一对应。
+```
 
 ### `dce insight metric batch-query-range-metric`
 
@@ -865,7 +1719,29 @@
 - Body: required
 - Flags: none
 - Output: list path `data`; columns `errorMessage`, `status`
-- Example: `# param.start/end 为 unix 秒，step 为秒 (double) END=$(date +%s); START=$((END - 3600)) echo '{ "matchLabel": { "clusterName": "kpanda-global-cluster", "namespace": "insight-system" }, "param": {"start": '"$START"', "end": '"$END"', "step": 60}, "queryList": [ "up", "sum(rate(container_cpu_usage_seconds_total[5m]))" ] }' | dce insight metric batch-query-range-metric --file - -o json # 返回结构： # data[].data.matrix[] 与 query-range-metric 同结构 # data[].status SUCCESS | FAIL # data[].errorMessage # data 数组按 queryList 顺序一一对应。`
+- Example:
+
+```
+# param.start/end 为 unix 秒，step 为秒 (double)
+END=$(date +%s); START=$((END - 3600))
+echo '{
+  "matchLabel": {
+    "clusterName": "kpanda-global-cluster",
+    "namespace":   "insight-system"
+  },
+  "param": {"start": '"$START"', "end": '"$END"', "step": 60},
+  "queryList": [
+    "up",
+    "sum(rate(container_cpu_usage_seconds_total[5m]))"
+  ]
+}' | dce insight metric batch-query-range-metric --file - -o json
+
+# 返回结构：
+#   data[].data.matrix[]  与 query-range-metric 同结构
+#   data[].status         SUCCESS | FAIL
+#   data[].errorMessage
+# data 数组按 queryList 顺序一一对应。
+```
 
 ### `dce insight metric format-query`
 
@@ -874,7 +1750,14 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `echo '{"query":"sum(rate(http_requests_total{code=~\"5..\"}[5m]))/sum(rate(http_requests_total[5m]))"}' \ | dce insight metric format-query --file - -o json # 返回结构：{ "query": "<格式化后的 PromQL>" }（对象，非数组）`
+- Example:
+
+```
+echo '{"query":"sum(rate(http_requests_total{code=~\"5..\"}[5m]))/sum(rate(http_requests_total[5m]))"}' \
+  | dce insight metric format-query --file - -o json
+
+# 返回结构：{ "query": "<格式化后的 PromQL>" }（对象，非数组）
+```
 
 ### `dce insight metric query-metric`
 
@@ -889,7 +1772,27 @@
   - `--query` (query): query
   - `--time` (query, int64): Optional, current server time is used if the time parameter is omitted.
 - Output: list path `vector`
-- Example: `# 用集群名 - 当前所有 targets 的 up 状态 dce insight metric query-metric \ --cluster-name kpanda-global-cluster \ --query 'up' -o json # 用集群 UUID（与 --cluster-name 二选一） KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId) dce insight metric query-metric --cluster "$KUBESYSTEMID" --query 'up' -o json # 指定命名空间 + 时间戳（unix 秒）的瞬时 CPU 查询 dce insight metric query-metric \ --cluster-name kpanda-global-cluster \ --namespace insight-system \ --query 'sum(rate(container_cpu_usage_seconds_total{namespace="insight-system"}[5m])) by (pod)' \ --time 1747850400 -o json # 返回结构：vector 数组，每项 { metric: {labels}, values: { timestamp, value } }`
+- Example:
+
+```
+# 用集群名 - 当前所有 targets 的 up 状态
+dce insight metric query-metric \
+  --cluster-name kpanda-global-cluster \
+  --query 'up' -o json
+
+# 用集群 UUID（与 --cluster-name 二选一）
+KUBESYSTEMID=$(dce insight resource get-cluster --name kpanda-global-cluster -o json | jq -r .kubeSystemId)
+dce insight metric query-metric --cluster "$KUBESYSTEMID" --query 'up' -o json
+
+# 指定命名空间 + 时间戳（unix 秒）的瞬时 CPU 查询
+dce insight metric query-metric \
+  --cluster-name kpanda-global-cluster \
+  --namespace insight-system \
+  --query 'sum(rate(container_cpu_usage_seconds_total{namespace="insight-system"}[5m])) by (pod)' \
+  --time 1747850400 -o json
+
+# 返回结构：vector 数组，每项 { metric: {labels}, values: { timestamp, value } }
+```
 
 ### `dce insight metric query-range-metric`
 
@@ -906,7 +1809,28 @@
   - `--end` (query, int64): end
   - `--step` (query, double): step
 - Output: list path `matrix`
-- Example: `# 最近 1 小时 up 指标，30s 采样 END=$(date +%s); START=$((END - 3600)) dce insight metric query-range-metric \ --cluster-name kpanda-global-cluster \ --query 'up' \ --start $START --end $END --step 30 -o json # insight-system 命名空间内 Pod CPU 使用率 dce insight metric query-range-metric \ --cluster-name kpanda-global-cluster \ --namespace insight-system \ --query 'sum(rate(container_cpu_usage_seconds_total[5m])) by (pod)' \ --start $START --end $END --step 60 -o json # 字段说明： # --start/--end unix 秒 (int64) # --step 采样间隔秒 (double)，可传小数 # 返回结构：matrix 数组，每项 { metric: {labels}, values: [{timestamp,value}, ...] }`
+- Example:
+
+```
+# 最近 1 小时 up 指标，30s 采样
+END=$(date +%s); START=$((END - 3600))
+dce insight metric query-range-metric \
+  --cluster-name kpanda-global-cluster \
+  --query 'up' \
+  --start $START --end $END --step 30 -o json
+
+# insight-system 命名空间内 Pod CPU 使用率
+dce insight metric query-range-metric \
+  --cluster-name kpanda-global-cluster \
+  --namespace insight-system \
+  --query 'sum(rate(container_cpu_usage_seconds_total[5m])) by (pod)' \
+  --start $START --end $END --step 60 -o json
+
+# 字段说明：
+#   --start/--end  unix 秒 (int64)
+#   --step         采样间隔秒 (double)，可传小数
+# 返回结构：matrix 数组，每项 { metric: {labels}, values: [{timestamp,value}, ...] }
+```
 
 ## Overview
 
@@ -920,7 +1844,18 @@
   - `--time` (query, int64): time unix timestamp .e.g. 1697597347
   - `--filters` (query): 可重复传入。可选值： CLUSTER_TOTAL | CLUSTER_NORMAL_TOTAL NODE_TOTAL | NODE_NORMAL_TOTAL DEPLOYMENT_TOTAL | DEPLOYMENT_NORMAL_TOTAL STATEFULSET_TOTAL | STATEFULSET_NORMAL_TOTAL DAEMONSET_TOTAL | DAEMONSET_NORMAL_TOTAL JOB_TOTAL | JOB_NORMAL_TOTAL POD_TOTAL | POD_NORMAL_TOTAL GPU_COUNT | GPU_ALLOCATED_COUNT LOG_TOTAL | TRACE_TOTAL 省略时返回上述全部 16 项。
 - Output: list path `data`; columns `errorMessage`, `status`
-- Example: `# 默认返回 16 个资源类型 dce insight overview get-resources-count -o json # 指定时间点（unix 秒）+ 仅查集群与节点 dce insight overview get-resources-count \ --time $(date +%s) \ --filters CLUSTER_TOTAL --filters CLUSTER_NORMAL_TOTAL \ --filters NODE_TOTAL --filters NODE_NORMAL_TOTAL -o json`
+- Example:
+
+```
+# 默认返回 16 个资源类型
+dce insight overview get-resources-count -o json
+
+# 指定时间点（unix 秒）+ 仅查集群与节点
+dce insight overview get-resources-count \
+  --time $(date +%s) \
+  --filters CLUSTER_TOTAL --filters CLUSTER_NORMAL_TOTAL \
+  --filters NODE_TOTAL --filters NODE_NORMAL_TOTAL -o json
+```
 
 ### `dce insight overview get-resources-range`
 
@@ -934,7 +1869,15 @@
   - `--end` (query, int64): end unix timestamp .e.g. 1697597347
   - `--step` (query, double): 采样间隔秒 (double)。默认 60。
 - Output: list path `data`; columns `errorMessage`, `status`
-- Example: `# 最近 1 小时，60s 采样 END=$(date +%s); START=$((END - 3600)) dce insight overview get-resources-range \ --start $START --end $END --step 60 \ --filters NODE_TOTAL --filters POD_NORMAL_TOTAL --filters POD_ABNORMAL_TOTAL -o json`
+- Example:
+
+```
+# 最近 1 小时，60s 采样
+END=$(date +%s); START=$((END - 3600))
+dce insight overview get-resources-range \
+  --start $START --end $END --step 60 \
+  --filters NODE_TOTAL --filters POD_NORMAL_TOTAL --filters POD_ABNORMAL_TOTAL -o json
+```
 
 ### `dce insight overview get-resources-usage`
 
@@ -949,7 +1892,20 @@
   - `--end` (query, int64): end unix timestamp .e.g. 1697597347
   - `--step` (query, double): 采样间隔秒 (double)。默认 60。
 - Output: list path `data`; columns `errorMessage`, `status`; pagination `cursor`
-- Example: `END=$(date +%s); START=$((END - 3600)) # 节点 CPU 使用率 Top 5 dce insight overview get-resources-usage \ --start $START --end $END --step 60 \ --filters NODE_CPU_USAGE --limit 5 -o json # 集群级 CPU 使用率 dce insight overview get-resources-usage \ --start $START --end $END --step 60 \ --filters CLUSTER_CPU_USAGE --limit 10 -o json`
+- Example:
+
+```
+END=$(date +%s); START=$((END - 3600))
+# 节点 CPU 使用率 Top 5
+dce insight overview get-resources-usage \
+  --start $START --end $END --step 60 \
+  --filters NODE_CPU_USAGE --limit 5 -o json
+
+# 集群级 CPU 使用率
+dce insight overview get-resources-usage \
+  --start $START --end $END --step 60 \
+  --filters CLUSTER_CPU_USAGE --limit 10 -o json
+```
 
 ### `dce insight overview get-services-monitor`
 
@@ -963,7 +1919,20 @@
   - `--time` (query, int64): timestamp unix timestamp .e.g. 1697597347
   - `--span-kinds` (query): spanKinds is the list of span kinds to include (logical OR) in the resulting metrics aggregation.
 - Output: list path `data`; columns `errorMessage`, `status`; pagination `cursor`
-- Example: `# 默认 - 平均延迟 + 错误率，Top 5 dce insight overview get-services-monitor -o json # 限制返回 10 条 dce insight overview get-services-monitor --limit 10 -o json # 指定时间点 + 仅统计 SERVER span dce insight overview get-services-monitor \ --time $(date +%s) --limit 5 \ --span-kinds SPAN_KIND_SERVER -o json`
+- Example:
+
+```
+# 默认 - 平均延迟 + 错误率，Top 5
+dce insight overview get-services-monitor -o json
+
+# 限制返回 10 条
+dce insight overview get-services-monitor --limit 10 -o json
+
+# 指定时间点 + 仅统计 SERVER span
+dce insight overview get-services-monitor \
+  --time $(date +%s) --limit 5 \
+  --span-kinds SPAN_KIND_SERVER -o json
+```
 
 ## Probe
 
@@ -976,7 +1945,49 @@
 - Flags:
   - `--cluster-name` (path, required): clusterName
   - `--namespace` (path, required): namespace
-- Example: `# 1) 先查可用 prober + module dce insight probe list-probers --cluster-name kpanda-global-cluster -o json # 2) 用上一步返回的 prober.url / 选定 module 创建 # 字段说明（probe / ProbeSpec）： # jobName 必填，^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$，1~63 # module 必填，须在该 prober 的 modules 列表中 # 常见: http_2xx | HTTP_GET | HTTP_POST | TCP | POP3S | SSH # interval 抓取间隔（go duration），如 "30s" # scrapeTimeout 抓取超时 # prober { name, url, scheme(http/https), path(/probe), proxyUrl } # targets.staticConfig.static 目标地址列表 # targets.staticConfig.labels 附加 label（map<string,string>） # 可选：proxyUrl / enableHttp2 / followRedirects / sampleLimit / # honorTimestamps / honorLabels / relabelings / metricRelabelings echo '{ "probe": { "jobName": "web-check", "module": "http_2xx", "interval": "30s", "scrapeTimeout": "10s", "prober": { "name": "insight-agent-prometheus-blackbox-exporter", "url": "insight-agent-prometheus-blackbox-exporter.insight-system:9115", "scheme": "http", "path": "/probe" }, "targets": { "staticConfig": { "static": [ "https://example.com", "https://api.example.com/health" ], "labels": {"team": "ops"} } } } }' | dce insight probe add-probe \ --cluster-name kpanda-global-cluster --namespace insight-system --file -`
+- Example:
+
+```
+# 1) 先查可用 prober + module
+dce insight probe list-probers --cluster-name kpanda-global-cluster -o json
+
+# 2) 用上一步返回的 prober.url / 选定 module 创建
+# 字段说明（probe / ProbeSpec）：
+#   jobName        必填，^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$，1~63
+#   module         必填，须在该 prober 的 modules 列表中
+#                  常见: http_2xx | HTTP_GET | HTTP_POST | TCP | POP3S | SSH
+#   interval       抓取间隔（go duration），如 "30s"
+#   scrapeTimeout  抓取超时
+#   prober         { name, url, scheme(http/https), path(/probe), proxyUrl }
+#   targets.staticConfig.static  目标地址列表
+#   targets.staticConfig.labels  附加 label（map<string,string>）
+#   可选：proxyUrl / enableHttp2 / followRedirects / sampleLimit /
+#        honorTimestamps / honorLabels / relabelings / metricRelabelings
+echo '{
+  "probe": {
+    "jobName":       "web-check",
+    "module":        "http_2xx",
+    "interval":      "30s",
+    "scrapeTimeout": "10s",
+    "prober": {
+      "name":   "insight-agent-prometheus-blackbox-exporter",
+      "url":    "insight-agent-prometheus-blackbox-exporter.insight-system:9115",
+      "scheme": "http",
+      "path":   "/probe"
+    },
+    "targets": {
+      "staticConfig": {
+        "static": [
+          "https://example.com",
+          "https://api.example.com/health"
+        ],
+        "labels": {"team": "ops"}
+      }
+    }
+  }
+}' | dce insight probe add-probe \
+      --cluster-name kpanda-global-cluster --namespace insight-system --file -
+```
 
 ### `dce insight probe delete-probe`
 
@@ -988,7 +1999,13 @@
   - `--cluster-name` (path, required): clusterName
   - `--namespace` (path, required): namespace
   - `--job-name` (path, required): jobName
-- Example: `dce insight probe delete-probe \ --cluster-name kpanda-global-cluster --namespace insight-system \ --job-name web-check`
+- Example:
+
+```
+dce insight probe delete-probe \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --job-name web-check
+```
 
 ### `dce insight probe get-probe`
 
@@ -1000,7 +2017,15 @@
   - `--cluster-name` (path, required): clusterName
   - `--namespace` (path, required): namespace
   - `--job-name` (path, required): jobName
-- Example: `dce insight probe get-probe \ --cluster-name kpanda-global-cluster --namespace insight-system \ --job-name web-check -o json # 资源不存在时返回 HTTP 404。`
+- Example:
+
+```
+dce insight probe get-probe \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --job-name web-check -o json
+
+# 资源不存在时返回 HTTP 404。
+```
 
 ### `dce insight probe list-probers`
 
@@ -1011,7 +2036,17 @@
 - Flags:
   - `--cluster-name` (path, required): clusterName
 - Output: list path `probers`
-- Example: `dce insight probe list-probers --cluster-name kpanda-global-cluster -o json # 返回结构： # probers[].prober ProberSpec { name, url, scheme, path, proxyUrl } # probers[].modules 该 prober 支持的模块名数组，例如： # [http_2xx, HTTP_GET, HTTP_POST, TCP, POP3S, SSH] # probers[].configmapMeta { clusterName, namespace, name, data } 模块定义来源`
+- Example:
+
+```
+dce insight probe list-probers --cluster-name kpanda-global-cluster -o json
+
+# 返回结构：
+#   probers[].prober          ProberSpec { name, url, scheme, path, proxyUrl }
+#   probers[].modules         该 prober 支持的模块名数组，例如：
+#                             [http_2xx, HTTP_GET, HTTP_POST, TCP, POP3S, SSH]
+#   probers[].configmapMeta   { clusterName, namespace, name, data } 模块定义来源
+```
 
 ### `dce insight probe list-probes`
 
@@ -1027,7 +2062,23 @@
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
   - `--sorts` (query): 单一排序字段，格式 "<field>[,asc|desc]"，仅省略方向时默认 desc。 支持：job_name,desc | job_name,asc | create_at,desc | create_at,asc 默认：create_at,desc
 - Output: list path `items`; columns `metadata.name`, `metadata.namespace`, `status.phase`, `kind`, `metadata.creationTimestamp`, `apiVersion`; pagination `offset`
-- Example: `dce insight probe list-probes \ --cluster-name kpanda-global-cluster --namespace insight-system -o json # 模糊搜索 + 分页 + 排序 dce insight probe list-probes \ --cluster-name kpanda-global-cluster --namespace insight-system \ --fuzzy-name http --sorts 'create_at,desc' \ --page 1 --page-size 50 -o json # 返回 items[] 每条结构： # kind / apiVersion / metadata # spec { jobName, module, prober, targets, interval, scrapeTimeout, ... } # status.phase Pending | Running | Failed`
+- Example:
+
+```
+dce insight probe list-probes \
+  --cluster-name kpanda-global-cluster --namespace insight-system -o json
+
+# 模糊搜索 + 分页 + 排序
+dce insight probe list-probes \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --fuzzy-name http --sorts 'create_at,desc' \
+  --page 1 --page-size 50 -o json
+
+# 返回 items[] 每条结构：
+#   kind / apiVersion / metadata
+#   spec { jobName, module, prober, targets, interval, scrapeTimeout, ... }
+#   status.phase  Pending | Running | Failed
+```
 
 ### `dce insight probe update-probe`
 
@@ -1039,7 +2090,24 @@
   - `--cluster-name` (path, required): clusterName
   - `--namespace` (path, required): namespace
   - `--job-name` (path, required): jobName
-- Example: `# 只能更新这 4 个字段；其他 spec 字段（prober/relabelings/...) 需删了重建。 echo '{ "interval": "60s", "scrapeTimeout": "15s", "module": "http_2xx", "targets": { "staticConfig": { "static": ["https://example.com"], "labels": {"team": "ops", "tier": "edge"} } } }' | dce insight probe update-probe \ --cluster-name kpanda-global-cluster --namespace insight-system \ --job-name web-check --file -`
+- Example:
+
+```
+# 只能更新这 4 个字段；其他 spec 字段（prober/relabelings/...) 需删了重建。
+echo '{
+  "interval":      "60s",
+  "scrapeTimeout": "15s",
+  "module":        "http_2xx",
+  "targets": {
+    "staticConfig": {
+      "static": ["https://example.com"],
+      "labels": {"team": "ops", "tier": "edge"}
+    }
+  }
+}' | dce insight probe update-probe \
+      --cluster-name kpanda-global-cluster --namespace insight-system \
+      --job-name web-check --file -
+```
 
 ## Resource
 
@@ -1051,7 +2119,12 @@
 - Body: none
 - Flags:
   - `--cluster` (path, required): use cluster_name
-- Example: `dce insight resource get-agent-summary --cluster prod-1 dce insight resource get-agent-summary --cluster prod-1 -o json`
+- Example:
+
+```
+dce insight resource get-agent-summary --cluster prod-1
+dce insight resource get-agent-summary --cluster prod-1 -o json
+```
 
 ### `dce insight resource get-cluster`
 
@@ -1061,7 +2134,12 @@
 - Body: none
 - Flags:
   - `--name` (path, required): name
-- Example: `dce insight resource get-cluster --name prod-1 dce insight resource get-cluster --name prod-1 -o json`
+- Example:
+
+```
+dce insight resource get-cluster --name prod-1
+dce insight resource get-cluster --name prod-1 -o json
+```
 
 ### `dce insight resource get-cronjob`
 
@@ -1090,7 +2168,13 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `name`, `namespace`, `phase`, `cpuUsage`, `memoryUsage`, `nodeName`; pagination `offset`
-- Example: `dce insight resource get-cronjob-pods \ --cluster prod-1 --namespace default --name nightly-backup \ --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource get-cronjob-pods \
+  --cluster prod-1 --namespace default --name nightly-backup \
+  --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource get-daemonset`
 
@@ -1119,7 +2203,13 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `name`, `namespace`, `phase`, `cpuUsage`, `memoryUsage`, `nodeName`; pagination `offset`
-- Example: `dce insight resource get-daemonset-pods \ --cluster prod-1 --namespace kube-system --name fluent-bit \ --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource get-daemonset-pods \
+  --cluster prod-1 --namespace kube-system --name fluent-bit \
+  --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource get-deployment`
 
@@ -1148,7 +2238,15 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `name`, `namespace`, `phase`, `cpuUsage`, `memoryUsage`, `nodeName`; pagination `offset`
-- Example: `dce insight resource get-deployment-pods \ --cluster prod-1 --namespace default --name my-app dce insight resource get-deployment-pods \ --cluster prod-1 --namespace default --name my-app \ --pod my-app-abc --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource get-deployment-pods \
+  --cluster prod-1 --namespace default --name my-app
+dce insight resource get-deployment-pods \
+  --cluster prod-1 --namespace default --name my-app \
+  --pod my-app-abc --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource get-job`
 
@@ -1177,7 +2275,13 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `name`, `namespace`, `phase`, `cpuUsage`, `memoryUsage`, `nodeName`; pagination `offset`
-- Example: `dce insight resource get-job-pods \ --cluster prod-1 --namespace default --name backup-20240101 \ --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource get-job-pods \
+  --cluster prod-1 --namespace default --name backup-20240101 \
+  --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource get-namespace`
 
@@ -1199,7 +2303,12 @@
 - Flags:
   - `--cluster` (path, required): cluster
   - `--name` (path, required): name
-- Example: `dce insight resource get-node --cluster prod-1 --name node-1 dce insight resource get-node --cluster prod-1 --name node-1 -o json`
+- Example:
+
+```
+dce insight resource get-node --cluster prod-1 --name node-1
+dce insight resource get-node --cluster prod-1 --name node-1 -o json
+```
 
 ### `dce insight resource get-node-gpu-dashboards`
 
@@ -1211,7 +2320,12 @@
   - `--cluster` (path, required): cluster
   - `--name` (path, required): name
 - Output: list path `urls`; columns `en`, `vendor`, `zh`
-- Example: `dce insight resource get-node-gpu-dashboards --cluster prod-1 --name node-1 dce insight resource get-node-gpu-dashboards --cluster prod-1 --name node-1 -o json`
+- Example:
+
+```
+dce insight resource get-node-gpu-dashboards --cluster prod-1 --name node-1
+dce insight resource get-node-gpu-dashboards --cluster prod-1 --name node-1 -o json
+```
 
 ### `dce insight resource get-pod`
 
@@ -1224,7 +2338,12 @@
   - `--namespace` (path, required): namespace
   - `--name` (path, required): name
 - Output: list path `conditions`; columns `type`, `lastTransitionTime`, `lastUpdateTime`, `message`, `reason`, `status`
-- Example: `dce insight resource get-pod --cluster prod-1 --namespace default --name my-app-abc123 dce insight resource get-pod --cluster prod-1 --namespace default --name my-app-abc123 -o json`
+- Example:
+
+```
+dce insight resource get-pod --cluster prod-1 --namespace default --name my-app-abc123
+dce insight resource get-pod --cluster prod-1 --namespace default --name my-app-abc123 -o json
+```
 
 ### `dce insight resource get-pod-gpu-dashboards`
 
@@ -1237,7 +2356,12 @@
   - `--namespace` (path, required): namespace
   - `--name` (path, required): name
 - Output: list path `urls`; columns `en`, `vendor`, `zh`
-- Example: `dce insight resource get-pod-gpu-dashboards \ --cluster prod-1 --namespace default --name my-gpu-pod`
+- Example:
+
+```
+dce insight resource get-pod-gpu-dashboards \
+  --cluster prod-1 --namespace default --name my-gpu-pod
+```
 
 ### `dce insight resource get-pod-jvm-dashboards`
 
@@ -1252,7 +2376,13 @@
   - `--start` (query, int64): start
   - `--end` (query, int64): end
   - `--step` (query, double): step
-- Example: `dce insight resource get-pod-jvm-dashboards \ --cluster prod-1 --namespace default --name my-java-pod \ --start 1700000000 --end 1700003600 --step 30`
+- Example:
+
+```
+dce insight resource get-pod-jvm-dashboards \
+  --cluster prod-1 --namespace default --name my-java-pod \
+  --start 1700000000 --end 1700003600 --step 30
+```
 
 ### `dce insight resource get-pod-metrics`
 
@@ -1269,7 +2399,28 @@
   - `--step` (query, double): Query resolution step width in duration format or float number of seconds. Optional.
   - `--query-list` (query): Query list. support below metrics:
 - Output: list path `metrics`; columns `errorMessage`, `status`
-- Example: `# 时间格式：--start / --end 同时接受 unix 秒 (int) 或 RFC3339 字符串 # --step 单位为秒 END=$(date +%s); START=$((END - 3600)) # 最近 1 小时，30s 步长 dce insight resource get-pod-metrics \ --cluster kpanda-global-cluster --namespace kube-system \ --name coredns-6d4d6f8c7-x8zvw \ --start $START --end $END --step 30 -o json # 指定 metric 子集（PromQL-like keys，服务端定义） dce insight resource get-pod-metrics \ --cluster kpanda-global-cluster --namespace kube-system \ --name coredns-6d4d6f8c7-x8zvw \ --start $START --end $END --step 30 \ --query-list cpuUsage --query-list memoryUsage -o json # 输出：.metrics 字段（按 metric key 分组的时序数据）`
+- Example:
+
+```
+# 时间格式：--start / --end 同时接受 unix 秒 (int) 或 RFC3339 字符串
+# --step 单位为秒
+END=$(date +%s); START=$((END - 3600))
+
+# 最近 1 小时，30s 步长
+dce insight resource get-pod-metrics \
+  --cluster kpanda-global-cluster --namespace kube-system \
+  --name coredns-6d4d6f8c7-x8zvw \
+  --start $START --end $END --step 30 -o json
+
+# 指定 metric 子集（PromQL-like keys，服务端定义）
+dce insight resource get-pod-metrics \
+  --cluster kpanda-global-cluster --namespace kube-system \
+  --name coredns-6d4d6f8c7-x8zvw \
+  --start $START --end $END --step 30 \
+  --query-list cpuUsage --query-list memoryUsage -o json
+
+# 输出：.metrics 字段（按 metric key 分组的时序数据）
+```
 
 ### `dce insight resource get-server-component-summary`
 
@@ -1279,7 +2430,12 @@
 - Body: none
 - Flags: none
 - Output: list path `summary`; columns `name`, `phase`, `creationTimestamp`, `availability`, `message`, `version`
-- Example: `# 不需要 --cluster 参数；查询 Insight 服务端各组件健康状态。 dce insight resource get-server-component-summary -o json`
+- Example:
+
+```
+# 不需要 --cluster 参数；查询 Insight 服务端各组件健康状态。
+dce insight resource get-server-component-summary -o json
+```
 
 ### `dce insight resource get-service`
 
@@ -1321,7 +2477,13 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `name`, `namespace`, `phase`, `cpuUsage`, `memoryUsage`, `nodeName`; pagination `offset`
-- Example: `dce insight resource get-statefulset-pods \ --cluster prod-1 --namespace default --name my-db \ --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource get-statefulset-pods \
+  --cluster prod-1 --namespace default --name my-db \
+  --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource list-cluster-summary`
 
@@ -1337,7 +2499,13 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `phase`, `accessScope`, `kubeSystemId`, `role`; pagination `offset`
-- Example: `dce insight resource list-cluster-summary dce insight resource list-cluster-summary --phase RUNNING --version v1.28 \ --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource list-cluster-summary
+dce insight resource list-cluster-summary --phase RUNNING --version v1.28 \
+  --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource list-clusters`
 
@@ -1348,7 +2516,13 @@
 - Flags:
   - `--show-all-cluster` (query): show_all_cluster default is false, will only return cluster with
 - Output: list path `items`; columns `name`, `phase`, `accessScope`, `kubeSystemId`, `role`
-- Example: `dce insight resource list-clusters # Include clusters that have not enabled monitoring dce insight resource list-clusters --show-all-cluster=true -o json`
+- Example:
+
+```
+dce insight resource list-clusters
+# Include clusters that have not enabled monitoring
+dce insight resource list-clusters --show-all-cluster=true -o json
+```
 
 ### `dce insight resource list-cronjobs`
 
@@ -1364,7 +2538,13 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `namespace`, `phase`; pagination `offset`
-- Example: `dce insight resource list-cronjobs --cluster prod-1 dce insight resource list-cronjobs --cluster prod-1 --namespace default \ --phase JOB_STATE_RUNNING -o json`
+- Example:
+
+```
+dce insight resource list-cronjobs --cluster prod-1
+dce insight resource list-cronjobs --cluster prod-1 --namespace default \
+  --phase JOB_STATE_RUNNING -o json
+```
 
 ### `dce insight resource list-daemonsets`
 
@@ -1380,7 +2560,13 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `namespace`, `phase`; pagination `offset`
-- Example: `dce insight resource list-daemonsets --cluster prod-1 dce insight resource list-daemonsets --cluster prod-1 --namespace kube-system \ --phase WORKLOAD_STATE_NOT_READY -o json`
+- Example:
+
+```
+dce insight resource list-daemonsets --cluster prod-1
+dce insight resource list-daemonsets --cluster prod-1 --namespace kube-system \
+  --phase WORKLOAD_STATE_NOT_READY -o json
+```
 
 ### `dce insight resource list-deployments`
 
@@ -1396,7 +2582,16 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `namespace`, `phase`; pagination `offset`
-- Example: `dce insight resource list-deployments --cluster kpanda-global-cluster dce insight resource list-deployments --cluster kpanda-global-cluster --namespace kube-system \ --phase WORKLOAD_STATE_NOT_READY -o json # 输出：.items[] 主要字段 name / namespace / tracingEnabled # （Deployment 详情通过 get-deployment 获取，含 conditions / metadata 等完整字段）`
+- Example:
+
+```
+dce insight resource list-deployments --cluster kpanda-global-cluster
+dce insight resource list-deployments --cluster kpanda-global-cluster --namespace kube-system \
+  --phase WORKLOAD_STATE_NOT_READY -o json
+
+# 输出：.items[] 主要字段 name / namespace / tracingEnabled
+# （Deployment 详情通过 get-deployment 获取，含 conditions / metadata 等完整字段）
+```
 
 ### `dce insight resource list-jobs`
 
@@ -1412,7 +2607,13 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `namespace`, `status.phase`; pagination `offset`
-- Example: `dce insight resource list-jobs --cluster prod-1 dce insight resource list-jobs --cluster prod-1 --namespace default \ --phase JOB_STATE_FAILED -o json`
+- Example:
+
+```
+dce insight resource list-jobs --cluster prod-1
+dce insight resource list-jobs --cluster prod-1 --namespace default \
+  --phase JOB_STATE_FAILED -o json
+```
 
 ### `dce insight resource list-namespaces`
 
@@ -1423,7 +2624,15 @@
 - Flags:
   - `--cluster` (path, required): cluster
 - Output: list path `namespaces`; columns `name`, `role`
-- Example: `# --cluster 必填（集群名或 UUID） dce insight resource list-namespaces --cluster kpanda-global-cluster -o json # 备注：返回的 items 仅包含被 Insight 监控覆盖的命名空间； # 如果为空，可能是该集群 insight-agent 未启用或采集尚未生效。`
+- Example:
+
+```
+# --cluster 必填（集群名或 UUID）
+dce insight resource list-namespaces --cluster kpanda-global-cluster -o json
+
+# 备注：返回的 items 仅包含被 Insight 监控覆盖的命名空间；
+# 如果为空，可能是该集群 insight-agent 未启用或采集尚未生效。
+```
 
 ### `dce insight resource list-nodes`
 
@@ -1438,7 +2647,13 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `phase`; pagination `offset`
-- Example: `dce insight resource list-nodes --cluster prod-1 dce insight resource list-nodes --cluster prod-1 --phase NODE_PHASE_NOT_READY -o json dce insight resource list-nodes --cluster prod-1 --name node- --page 1 --page-size 50`
+- Example:
+
+```
+dce insight resource list-nodes --cluster prod-1
+dce insight resource list-nodes --cluster prod-1 --phase NODE_PHASE_NOT_READY -o json
+dce insight resource list-nodes --cluster prod-1 --name node- --page 1 --page-size 50
+```
 
 ### `dce insight resource list-pod-containers`
 
@@ -1453,7 +2668,15 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `phase`; pagination `offset`
-- Example: `dce insight resource list-pod-containers \ --cluster prod-1 --namespace default --name my-app-abc123 dce insight resource list-pod-containers \ --cluster prod-1 --namespace default --name my-app-abc123 \ --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource list-pod-containers \
+  --cluster prod-1 --namespace default --name my-app-abc123
+dce insight resource list-pod-containers \
+  --cluster prod-1 --namespace default --name my-app-abc123 \
+  --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource list-pods`
 
@@ -1469,7 +2692,13 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `namespace`, `phase`, `cpuUsage`, `memoryUsage`, `nodeName`; pagination `offset`
-- Example: `dce insight resource list-pods --cluster prod-1 dce insight resource list-pods --cluster prod-1 --namespace default --phase POD_PHASE_RUNNING dce insight resource list-pods --cluster prod-1 --name my-app --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight resource list-pods --cluster prod-1
+dce insight resource list-pods --cluster prod-1 --namespace default --phase POD_PHASE_RUNNING
+dce insight resource list-pods --cluster prod-1 --name my-app --page 1 --page-size 50 -o json
+```
 
 ### `dce insight resource list-services`
 
@@ -1484,7 +2713,15 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `namespace`, `tracingEnabled`; pagination `offset`
-- Example: `dce insight resource list-services --cluster kpanda-global-cluster dce insight resource list-services --cluster kpanda-global-cluster \ --namespace kube-system --name coredns -o json # 输出：.items[] 主要字段 name / namespace / tracingEnabled`
+- Example:
+
+```
+dce insight resource list-services --cluster kpanda-global-cluster
+dce insight resource list-services --cluster kpanda-global-cluster \
+  --namespace kube-system --name coredns -o json
+
+# 输出：.items[] 主要字段 name / namespace / tracingEnabled
+```
 
 ### `dce insight resource list-statefulsets`
 
@@ -1500,7 +2737,13 @@
   - `--page` (query, default `1`, int32): Page is current page.
   - `--page-size` (query, default `20`, int32): Size is the data number shown per page.
 - Output: list path `items`; columns `name`, `namespace`, `phase`; pagination `offset`
-- Example: `dce insight resource list-statefulsets --cluster prod-1 dce insight resource list-statefulsets --cluster prod-1 --namespace default \ --phase WORKLOAD_STATE_RUNNING -o json`
+- Example:
+
+```
+dce insight resource list-statefulsets --cluster prod-1
+dce insight resource list-statefulsets --cluster prod-1 --namespace default \
+  --phase WORKLOAD_STATE_RUNNING -o json
+```
 
 ## ServiceGraph
 
@@ -1512,7 +2755,129 @@
 - Body: required
 - Flags: none
 - Output: list path `edges`; columns `id`, `source`, `target`
-- Example: `END=$(date +%s)000; START=$(($(date +%s) - 3600))000 echo '{ "clusterNames": ["kpanda-global-cluster"], "start": "'"$START"'", "end": "'"$END"'" }' | dce insight servicegraph get-graph --file - -o json # 上例：基础查询（必填 clusterNames + start + end），start/end 为 unix 毫秒字符串 # 按命名空间过滤： echo '{ "clusterNames": ["kpanda-global-cluster"], "namespaces": ["insight-system"], "start": "'"$START"'", "end": "'"$END"'" }' | dce insight servicegraph get-graph --file - -o json # 带 graphType / layer / 依赖深度过滤 # 注意：graphType / layer 是大写枚举字符串（非 "service" / "L7"），传错值会返回 HTTP 400 echo '{ "clusterNames": ["kpanda-global-cluster"], "namespaces": ["insight-system"], "services": ["insight-server"], "workloads": ["insight-server"], "start": "'"$START"'", "end": "'"$END"'", "graphType": "SERVICE_SCOPE", "layer": "KUBERNETES", "showUpDownRelatedNode": true, "filters": { "aggType": "INTERSECTION", "dependencyMaxDepth": 3, "clauses": [ {"dataType":"NODE_DATA","field":"SERVICE_NAME","operation":"CONTAIN","stringValue":"insight"} ] } }' | dce insight servicegraph get-graph --file - -o json # 请求体字段（BaseGraphQuery）： # clusterNames 集群名数组，必填 # clusters 集群 UUID 数组（与 clusterNames 二选一/并存） # start / end unix 毫秒字符串（必填） # namespaces / services / workloads 作用域过滤（可选） # extensionLabels 形如 "skoala_registry=ireg-1,instance_name=xxx" # layer 枚举 KUBERNETES | MESH | OS_LINUX(=VM) | INFRA | GENERAL # graphType 枚举 CLUSTER_SCOPE | NAMESPACE_SCOPE | SERVICE_SCOPE | # WORKLOAD_SCOPE | INSTANCE_SCOPE | MIXED # showVirtualNode 默认 false # showUpDownRelatedNode 默认 false；true 时展示上下游 # filters.aggType INTERSECTION（UNION 暂未支持） # filters.dependencyMaxDepth 依赖深度，默认 1 # filters.clauses[] { dataType=NODE_DATA, field, operation, stringValue|floatValue } # field=SERVICE_NAME 支持 CONTAIN/NOT_CONTAIN/EQUAL/NOT_EQUAL/REGEX_PATTERN # field=STATUS_ERROR_RATE 支持 LE/GE，使用 floatValue # field=STATUS_LATENCY 支持 LE/GE，使用 floatValue（单位秒） # # 返回结构（Graph）： # nodes[] { id, parent, type(NodeType), metadata, position, statuses[] } # edges[] { id, source, target, statuses[], properties } # layer / graphType # Status.name 约定：requestsPerMinute / errorRate(%) / avgLatency(秒) / # replicas / availableReplicas / healthyStatus(0~3) ... # # ────────────────────────────────────────────────────────────────── # 数据分析指南 # ────────────────────────────────────────────────────────────────── # Edge.statuses 上的常见指标名： # request_total 总请求数 # request_failed_total 失败请求数 # request_per_second QPS # request_avg_latency 平均延迟（秒） # # 第一步：Node 数据分析 # 1.1 服务类型分布：按 nodes[].type 分组计数 # jq '.nodes | group_by(.type) # | map({type: .[0].type, count: length})' # # 1.2 服务依赖数 TOP5（作为 edge.source 出现的次数） # jq '.edges | group_by(.source) # | map({source: .[0].source, count: length}) # | sort_by(.count) | reverse | .[:5]' # # 1.3 服务被依赖数 TOP5（作为 edge.target 出现的次数） # jq '.edges | group_by(.target) # | map({target: .[0].target, count: length}) # | sort_by(.count) | reverse | .[:5]' # # 第二步：Edge 指标 TOP5 # 2.1 错误数 TOP5：按 statuses[name=request_failed_total].value 降序 # jq '.edges # | map(select(.statuses[]? # | .name == "request_failed_total" and .value > 0)) # | sort_by(.statuses[] | select(.name == "request_failed_total") | .value) # | reverse | .[:5] # | map({source, target, # failed: (.statuses[] | select(.name == "request_failed_total") | .value)})' # # 2.2 请求数 TOP5：按 statuses[name=request_total].value 降序 # jq '.edges # | sort_by(.statuses[] | select(.name == "request_total") | .value) # | reverse | .[:5] # | map({source, target, # total: (.statuses[] | select(.name == "request_total") | .value)})' # # 2.3 平均延迟 TOP5：按 statuses[name=request_avg_latency].value 降序 # jq '.edges # | sort_by(.statuses[] | select(.name == "request_avg_latency") | .value) # | reverse | .[:5] # | map({source, target, # latency: (.statuses[] | select(.name == "request_avg_latency") | .value)})' # 值单位为秒，展示时可换算为 ms 并标注单位。 # # 第三步：汇总异常服务 # 综合上述结果，按严重度排序输出 service / issue 列表： # 请求错误 > 请求延迟高 > 请求太多 > 其他 # # 注意：node.id / edge.source / edge.target 中可能含集群 UUID。 # 展示给用户时应替换为集群名： # dce insight resource list-clusters -o json # | jq -r '.items[] | .kubeSystemId + " " + .name' # 用上面映射把 UUID 替换回名字再输出表格。`
+- Example:
+
+```
+END=$(date +%s)000; START=$(($(date +%s) - 3600))000
+echo '{
+  "clusterNames": ["kpanda-global-cluster"],
+  "start": "'"$START"'",
+  "end":   "'"$END"'"
+}' | dce insight servicegraph get-graph --file - -o json
+# 上例：基础查询（必填 clusterNames + start + end），start/end 为 unix 毫秒字符串
+# 按命名空间过滤：
+echo '{
+  "clusterNames": ["kpanda-global-cluster"],
+  "namespaces":   ["insight-system"],
+  "start": "'"$START"'",
+  "end":   "'"$END"'"
+}' | dce insight servicegraph get-graph --file - -o json
+
+# 带 graphType / layer / 依赖深度过滤
+# 注意：graphType / layer 是大写枚举字符串（非 "service" / "L7"），传错值会返回 HTTP 400
+echo '{
+  "clusterNames": ["kpanda-global-cluster"],
+  "namespaces":   ["insight-system"],
+  "services":     ["insight-server"],
+  "workloads":    ["insight-server"],
+  "start": "'"$START"'",
+  "end":   "'"$END"'",
+  "graphType": "SERVICE_SCOPE",
+  "layer":     "KUBERNETES",
+  "showUpDownRelatedNode": true,
+  "filters": {
+    "aggType": "INTERSECTION",
+    "dependencyMaxDepth": 3,
+    "clauses": [
+      {"dataType":"NODE_DATA","field":"SERVICE_NAME","operation":"CONTAIN","stringValue":"insight"}
+    ]
+  }
+}' | dce insight servicegraph get-graph --file - -o json
+
+# 请求体字段（BaseGraphQuery）：
+#   clusterNames        集群名数组，必填
+#   clusters            集群 UUID 数组（与 clusterNames 二选一/并存）
+#   start / end         unix 毫秒字符串（必填）
+#   namespaces / services / workloads  作用域过滤（可选）
+#   extensionLabels     形如 "skoala_registry=ireg-1,instance_name=xxx"
+#   layer 枚举          KUBERNETES | MESH | OS_LINUX(=VM) | INFRA | GENERAL
+#   graphType 枚举      CLUSTER_SCOPE | NAMESPACE_SCOPE | SERVICE_SCOPE |
+#                       WORKLOAD_SCOPE | INSTANCE_SCOPE | MIXED
+#   showVirtualNode     默认 false
+#   showUpDownRelatedNode 默认 false；true 时展示上下游
+#   filters.aggType     INTERSECTION（UNION 暂未支持）
+#   filters.dependencyMaxDepth  依赖深度，默认 1
+#   filters.clauses[]   { dataType=NODE_DATA, field, operation, stringValue|floatValue }
+#     field=SERVICE_NAME      支持 CONTAIN/NOT_CONTAIN/EQUAL/NOT_EQUAL/REGEX_PATTERN
+#     field=STATUS_ERROR_RATE 支持 LE/GE，使用 floatValue
+#     field=STATUS_LATENCY    支持 LE/GE，使用 floatValue（单位秒）
+#
+# 返回结构（Graph）：
+#   nodes[]   { id, parent, type(NodeType), metadata, position, statuses[] }
+#   edges[]   { id, source, target, statuses[], properties }
+#   layer / graphType
+#   Status.name 约定：requestsPerMinute / errorRate(%) / avgLatency(秒) /
+#                     replicas / availableReplicas / healthyStatus(0~3) ...
+#
+# ──────────────────────────────────────────────────────────────────
+# 数据分析指南
+# ──────────────────────────────────────────────────────────────────
+# Edge.statuses 上的常见指标名：
+#   request_total          总请求数
+#   request_failed_total   失败请求数
+#   request_per_second     QPS
+#   request_avg_latency    平均延迟（秒）
+#
+# 第一步：Node 数据分析
+#   1.1 服务类型分布：按 nodes[].type 分组计数
+#       jq '.nodes | group_by(.type)
+#          | map({type: .[0].type, count: length})'
+#
+#   1.2 服务依赖数 TOP5（作为 edge.source 出现的次数）
+#       jq '.edges | group_by(.source)
+#          | map({source: .[0].source, count: length})
+#          | sort_by(.count) | reverse | .[:5]'
+#
+#   1.3 服务被依赖数 TOP5（作为 edge.target 出现的次数）
+#       jq '.edges | group_by(.target)
+#          | map({target: .[0].target, count: length})
+#          | sort_by(.count) | reverse | .[:5]'
+#
+# 第二步：Edge 指标 TOP5
+#   2.1 错误数 TOP5：按 statuses[name=request_failed_total].value 降序
+#       jq '.edges
+#          | map(select(.statuses[]?
+#              | .name == "request_failed_total" and .value > 0))
+#          | sort_by(.statuses[] | select(.name == "request_failed_total") | .value)
+#          | reverse | .[:5]
+#          | map({source, target,
+#                 failed: (.statuses[] | select(.name == "request_failed_total") | .value)})'
+#
+#   2.2 请求数 TOP5：按 statuses[name=request_total].value 降序
+#       jq '.edges
+#          | sort_by(.statuses[] | select(.name == "request_total") | .value)
+#          | reverse | .[:5]
+#          | map({source, target,
+#                 total: (.statuses[] | select(.name == "request_total") | .value)})'
+#
+#   2.3 平均延迟 TOP5：按 statuses[name=request_avg_latency].value 降序
+#       jq '.edges
+#          | sort_by(.statuses[] | select(.name == "request_avg_latency") | .value)
+#          | reverse | .[:5]
+#          | map({source, target,
+#                 latency: (.statuses[] | select(.name == "request_avg_latency") | .value)})'
+#       值单位为秒，展示时可换算为 ms 并标注单位。
+#
+# 第三步：汇总异常服务
+#   综合上述结果，按严重度排序输出 service / issue 列表：
+#     请求错误 > 请求延迟高 > 请求太多 > 其他
+#
+# 注意：node.id / edge.source / edge.target 中可能含集群 UUID。
+# 展示给用户时应替换为集群名：
+#   dce insight resource list-clusters -o json
+#     | jq -r '.items[] | .kubeSystemId + " " + .name'
+# 用上面映射把 UUID 替换回名字再输出表格。
+```
 
 ### `dce insight servicegraph get-node-metrics`
 
@@ -1532,7 +2897,26 @@
   - `--cluster-name` (query): Required. e.g. clusterName=kpanda-global-cluster must give one of
   - `--span-kinds` (query): spanKinds is the list of span kinds to include (logical OR) in the
 - Output: list path `errorsRateMetrics`
-- Example: `END=$(date +%s)000 # 单个服务节点 30 分钟指标（endTime/lookback/step/rate-per 单位都是 ms） dce insight servicegraph get-node-metrics \ --cluster-name kpanda-global-cluster --namespace insight-system \ --service insight-server \ --end-time $END --lookback 1800000 \ --step 60000 --rate-per 60000 \ --span-kinds SPAN_KIND_SERVER -o json # 用 extension-filters 做 label 选择 dce insight servicegraph get-node-metrics \ --cluster-name kpanda-global-cluster --namespace insight-system \ --service insight-server \ --extension-filters 'skoala_registry=ire-111,instance=10.0.0.1' \ --end-time $END --lookback 1800000 --step 60000 --rate-per 60000 -o json`
+- Example:
+
+```
+END=$(date +%s)000
+
+# 单个服务节点 30 分钟指标（endTime/lookback/step/rate-per 单位都是 ms）
+dce insight servicegraph get-node-metrics \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --service insight-server \
+  --end-time $END --lookback 1800000 \
+  --step 60000 --rate-per 60000 \
+  --span-kinds SPAN_KIND_SERVER -o json
+
+# 用 extension-filters 做 label 选择
+dce insight servicegraph get-node-metrics \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --service insight-server \
+  --extension-filters 'skoala_registry=ire-111,instance=10.0.0.1' \
+  --end-time $END --lookback 1800000 --step 60000 --rate-per 60000 -o json
+```
 
 ## Tracing
 
@@ -1548,7 +2932,15 @@
   - `--cluster-name` (query): clusterName
   - `--namespace` (query): only for auth
 - Output: list path `traces`; columns `duration`, `method`, `operationName`, `protocol`, `spanCount`, `startTime`
-- Example: `# 必填：--trace-id / --cluster-name / --namespace dce insight tracing find-jaeger-trace --trace-id <traceId> \ --cluster-name kpanda-global-cluster --namespace insight-system -o json # 非法 trace id 时后端返回 "uninitialized TraceID is not allowed"`
+- Example:
+
+```
+# 必填：--trace-id / --cluster-name / --namespace
+dce insight tracing find-jaeger-trace --trace-id <traceId> \
+  --cluster-name kpanda-global-cluster --namespace insight-system -o json
+
+# 非法 trace id 时后端返回 "uninitialized TraceID is not allowed"
+```
 
 ### `dce insight tracing find-jaeger-traces`
 
@@ -1568,7 +2960,23 @@
   - `--cluster-name` (query): clusterName
   - `--namespace` (query): only for auth
 - Output: list path `traces`; columns `duration`, `method`, `operationName`, `protocol`, `spanCount`, `startTime`; pagination `cursor`
-- Example: `dce insight tracing find-jaeger-traces \ --cluster-name kpanda-global-cluster --namespace ghippo-system \ --service-name ghippo-apiserver \ --start 2026-05-21T07:00:00Z --end 2026-05-21T08:00:00Z \ --limit 50 -o json # 上例：最近 1 小时某服务的全部 trace；--start/--end 为 RFC3339，替换为实际窗口即可 # 慢 trace（>500ms）+ 指定 operation： dce insight tracing find-jaeger-traces \ --cluster-name kpanda-global-cluster --namespace ghippo-system \ --service-name ghippo-apiserver --operation-name 'GET /api/v1/orders' \ --duration-min 500ms --duration-max 5s \ --start 2026-05-21T07:00:00Z --end 2026-05-21T08:00:00Z -o json # 输出：.traces[] 含 duration / method / operationName / protocol / spanCount / startTime`
+- Example:
+
+```
+dce insight tracing find-jaeger-traces \
+  --cluster-name kpanda-global-cluster --namespace ghippo-system \
+  --service-name ghippo-apiserver \
+  --start 2026-05-21T07:00:00Z --end 2026-05-21T08:00:00Z \
+  --limit 50 -o json
+# 上例：最近 1 小时某服务的全部 trace；--start/--end 为 RFC3339，替换为实际窗口即可
+# 慢 trace（>500ms）+ 指定 operation：
+dce insight tracing find-jaeger-traces \
+  --cluster-name kpanda-global-cluster --namespace ghippo-system \
+  --service-name ghippo-apiserver --operation-name 'GET /api/v1/orders' \
+  --duration-min 500ms --duration-max 5s \
+  --start 2026-05-21T07:00:00Z --end 2026-05-21T08:00:00Z -o json
+# 输出：.traces[] 含 duration / method / operationName / protocol / spanCount / startTime
+```
 
 ### `dce insight tracing get-operation-detail`
 
@@ -1590,7 +2998,21 @@
   - `--rate-per` (query, int64): ratePer is the duration in which the per-second rate of change is calculated for a cumulative counter metric.
   - `--span-kinds` (query): spanKinds is the list of span kinds to include (logical OR) in the resulting metrics aggregation.
 - Output: list path `metrics`; columns `operationName`, `spanKind`; pagination `offset`
-- Example: `END=$(date +%s)000 # 必填：--cluster-name --namespace --service-name dce insight tracing get-operation-detail \ --cluster-name kpanda-global-cluster --namespace ghippo-system \ --service-name ghippo-apiserver \ --end-time $END --lookback 1800000 \ --step 60000 --rate-per 60000 \ --span-kinds SPAN_KIND_SERVER \ --sort 'p99,desc' --page 1 --page-size 50 -o json # 输出：.metrics[] per-operation 的速率 / 错误率 / 延迟分位`
+- Example:
+
+```
+END=$(date +%s)000
+# 必填：--cluster-name --namespace --service-name
+dce insight tracing get-operation-detail \
+  --cluster-name kpanda-global-cluster --namespace ghippo-system \
+  --service-name ghippo-apiserver \
+  --end-time $END --lookback 1800000 \
+  --step 60000 --rate-per 60000 \
+  --span-kinds SPAN_KIND_SERVER \
+  --sort 'p99,desc' --page 1 --page-size 50 -o json
+
+# 输出：.metrics[]  per-operation 的速率 / 错误率 / 延迟分位
+```
 
 ### `dce insight tracing get-service-detail`
 
@@ -1612,7 +3034,23 @@
   - `--rate-per` (query, int64): ratePer is the duration in which the per-second rate of change is calculated for a cumulative counter metric.
   - `--span-kinds` (query): spanKinds is the list of span kinds to include (logical OR) in the resulting metrics aggregation.
 - Output: list path `errorsRateMetrics`
-- Example: `END=$(date +%s)000 # 必填：--cluster-name --namespace --service-names dce insight tracing get-service-detail \ --cluster-name kpanda-global-cluster --namespace insight-system \ --service-names insight-agent --group-by-operation=true \ --end-time $END --lookback 1800000 \ --step 60000 --rate-per 60000 \ --span-kinds SPAN_KIND_SERVER -o json # 输出（皆为 SampleStream 时序数组）： # .reqRateMetric 吞吐 # .errorsRateMetrics 错误率 # .p50Metrics / .p75Metrics / .p95Metrics 延迟分位`
+- Example:
+
+```
+END=$(date +%s)000
+# 必填：--cluster-name --namespace --service-names
+dce insight tracing get-service-detail \
+  --cluster-name kpanda-global-cluster --namespace insight-system \
+  --service-names insight-agent --group-by-operation=true \
+  --end-time $END --lookback 1800000 \
+  --step 60000 --rate-per 60000 \
+  --span-kinds SPAN_KIND_SERVER -o json
+
+# 输出（皆为 SampleStream 时序数组）：
+#   .reqRateMetric        吞吐
+#   .errorsRateMetrics    错误率
+#   .p50Metrics / .p75Metrics / .p95Metrics  延迟分位
+```
 
 ### `dce insight tracing get-service-pods`
 
@@ -1634,7 +3072,18 @@
   - `--rate-per` (query, int64): ratePer is the duration in which the per-second rate of change is calculated for a cumulative counter metric.
   - `--span-kinds` (query): spanKinds is the list of span kinds to include (logical OR) in the resulting metrics aggregation.
 - Output: list path `items`; columns `namespace`, `clusterName`, `podName`, `reqPercentage`; pagination `offset`
-- Example: `END=$(date +%s)000 # 必填：--name --cluster-name --namespace dce insight tracing get-service-pods --name ghippo-apiserver \ --cluster-name kpanda-global-cluster --namespace ghippo-system \ --end-time $END --lookback 1800000 \ --sort 'reqPercentage,desc' --page 1 --page-size 50 -o json # 输出：.items[] 含 podName / namespace / clusterName / reqPercentage`
+- Example:
+
+```
+END=$(date +%s)000
+# 必填：--name --cluster-name --namespace
+dce insight tracing get-service-pods --name ghippo-apiserver \
+  --cluster-name kpanda-global-cluster --namespace ghippo-system \
+  --end-time $END --lookback 1800000 \
+  --sort 'reqPercentage,desc' --page 1 --page-size 50 -o json
+
+# 输出：.items[] 含 podName / namespace / clusterName / reqPercentage
+```
 
 ### `dce insight tracing get-services`
 
@@ -1654,7 +3103,19 @@
   - `--cluster` (query): cluster
   - `--cluster-name` (query): clusterName
 - Output: list path `items`; columns `namespace`, `errorRate`, `repLatency`, `reqRate`, `serviceName`; pagination `offset`
-- Example: `END=$(date +%s)000 # 默认全 namespace；可加 --namespace 过滤 dce insight tracing get-services \ --cluster-name kpanda-global-cluster \ --end-time $END --lookback 1800000 \ --span-kinds SPAN_KIND_SERVER --sort 'reqRate,desc' \ --page 1 --page-size 50 -o json # 输出：.items[] 含 namespace / serviceName / errorRate / repLatency / reqRate`
+- Example:
+
+```
+END=$(date +%s)000
+# 默认全 namespace；可加 --namespace 过滤
+dce insight tracing get-services \
+  --cluster-name kpanda-global-cluster \
+  --end-time $END --lookback 1800000 \
+  --span-kinds SPAN_KIND_SERVER --sort 'reqRate,desc' \
+  --page 1 --page-size 50 -o json
+
+# 输出：.items[] 含 namespace / serviceName / errorRate / repLatency / reqRate
+```
 
 ### `dce insight tracing get-slow-sql-spans`
 
@@ -1665,7 +3126,26 @@
 - Flags:
   - `--cluster-name` (path, required): Required.
 - Output: list path `items`; columns `duration`, `sourcePod`, `spanId`, `startTime`, `status`, `traceId`
-- Example: `# sort 支持：startTimeMillis,desc | startTimeMillis,asc | duration,desc | duration,asc echo '{ "namespace": "ghippo-system", "startTime": "2026-05-21T07:00:00.000Z", "endTime": "2026-05-21T08:00:00.000Z", "sort": "duration,desc", "page": 1, "pageSize": 50, "clauses": [ {"field":"db.statement","operation":"CONTAIN","stringValue":"SELECT"}, {"field":"duration","operation":"GT","floatValue":1000} ] }' | dce insight tracing get-slow-sql-spans \ --cluster-name kpanda-global-cluster --file - -o json # 输出：.items[] 含 duration / sourcePod / spanId / startTime / status / traceId`
+- Example:
+
+```
+# sort 支持：startTimeMillis,desc | startTimeMillis,asc | duration,desc | duration,asc
+echo '{
+  "namespace": "ghippo-system",
+  "startTime": "2026-05-21T07:00:00.000Z",
+  "endTime":   "2026-05-21T08:00:00.000Z",
+  "sort":      "duration,desc",
+  "page":      1,
+  "pageSize":  50,
+  "clauses": [
+    {"field":"db.statement","operation":"CONTAIN","stringValue":"SELECT"},
+    {"field":"duration","operation":"GT","floatValue":1000}
+  ]
+}' | dce insight tracing get-slow-sql-spans \
+      --cluster-name kpanda-global-cluster --file - -o json
+
+# 输出：.items[] 含 duration / sourcePod / spanId / startTime / status / traceId
+```
 
 ### `dce insight tracing get-tag-values`
 
@@ -1683,7 +3163,16 @@
   - `--start` (query): e.g. 2022-06-24T08:00:47.850Z
   - `--end` (query): e.g. 2022-06-24T08:00:47.850Z
 - Output: list path `values`; pagination `cursor`
-- Example: `# 必填：--name (tag key) --cluster --namespace dce insight tracing get-tag-values --name http.status_code \ --cluster kpanda-global-cluster --namespace ghippo-system \ --service-names ghippo-apiserver --limit 100 -o json # 输出：.values[]`
+- Example:
+
+```
+# 必填：--name (tag key) --cluster --namespace
+dce insight tracing get-tag-values --name http.status_code \
+  --cluster kpanda-global-cluster --namespace ghippo-system \
+  --service-names ghippo-apiserver --limit 100 -o json
+
+# 输出：.values[]
+```
 
 ### `dce insight tracing get-tags`
 
@@ -1700,7 +3189,17 @@
   - `--start` (query): e.g. 2022-06-24T08:00:47.850Z
   - `--end` (query): e.g. 2022-06-24T08:00:47.850Z
 - Output: list path `tags`; pagination `cursor`
-- Example: `# 必填：--cluster --namespace；--start / --end 默认 [now-15m, now] dce insight tracing get-tags \ --cluster kpanda-global-cluster --namespace ghippo-system \ --service-names ghippo-apiserver --limit 500 \ --start 2026-05-21T07:00:00Z --end 2026-05-21T08:00:00Z -o json # 输出：.tags[]`
+- Example:
+
+```
+# 必填：--cluster --namespace；--start / --end 默认 [now-15m, now]
+dce insight tracing get-tags \
+  --cluster kpanda-global-cluster --namespace ghippo-system \
+  --service-names ghippo-apiserver --limit 500 \
+  --start 2026-05-21T07:00:00Z --end 2026-05-21T08:00:00Z -o json
+
+# 输出：.tags[]
+```
 
 ### `dce insight tracing list-service-names`
 
@@ -1716,7 +3215,15 @@
   - `--start` (query): e.g. 2022-06-24T08:00:47.850Z
   - `--end` (query): e.g. 2022-06-24T08:00:47.850Z
 - Output: list path `services`
-- Example: `# ⚠️ --namespace 必填，缺失返回 HTTP 400 dce insight tracing list-service-names \ --cluster-name kpanda-global-cluster --namespace insight-system -o json # 输出：.services[]`
+- Example:
+
+```
+# ⚠️ --namespace 必填，缺失返回 HTTP 400
+dce insight tracing list-service-names \
+  --cluster-name kpanda-global-cluster --namespace insight-system -o json
+
+# 输出：.services[]
+```
 
 ### `dce insight tracing query-metadata`
 
@@ -1728,7 +3235,23 @@
   - `--cluster-name` (path, required): Required.
   - `--type` (path, required, one of: DATABASE_ADDRESS|DATABASE_SYSTEM|SQL_STATEMENT): type
 - Output: list path `items`
-- Example: `# --type 必填，枚举：DATABASE_ADDRESS | DATABASE_SYSTEM | SQL_STATEMENT echo '{ "namespace": "ghippo-system", "startTime": "2026-05-21T07:00:00.000Z", "endTime": "2026-05-21T08:00:00.000Z", "limit": 100, "clauses": [ {"field":"db.system","operation":"EQUAL","stringValue":"mysql"} ] }' | dce insight tracing query-metadata \ --cluster-name kpanda-global-cluster --type SQL_STATEMENT --file - -o json # 输出：.items[]`
+- Example:
+
+```
+# --type 必填，枚举：DATABASE_ADDRESS | DATABASE_SYSTEM | SQL_STATEMENT
+echo '{
+  "namespace": "ghippo-system",
+  "startTime": "2026-05-21T07:00:00.000Z",
+  "endTime":   "2026-05-21T08:00:00.000Z",
+  "limit": 100,
+  "clauses": [
+    {"field":"db.system","operation":"EQUAL","stringValue":"mysql"}
+  ]
+}' | dce insight tracing query-metadata \
+      --cluster-name kpanda-global-cluster --type SQL_STATEMENT --file - -o json
+
+# 输出：.items[]
+```
 
 ### `dce insight tracing query-operations`
 
@@ -1744,7 +3267,16 @@
   - `--start` (query): e.g. 2022-06-24T08:00:47.850Z
   - `--end` (query): e.g. 2022-06-24T08:00:47.850Z
 - Output: list path `operations`
-- Example: `# 必填：--cluster-name --namespace --service-name dce insight tracing query-operations \ --cluster-name kpanda-global-cluster --namespace ghippo-system \ --service-name ghippo-apiserver --max-size 200 -o json # 输出：.operations[]`
+- Example:
+
+```
+# 必填：--cluster-name --namespace --service-name
+dce insight tracing query-operations \
+  --cluster-name kpanda-global-cluster --namespace ghippo-system \
+  --service-name ghippo-apiserver --max-size 200 -o json
+
+# 输出：.operations[]
+```
 
 ### `dce insight tracing query-span-histogram`
 
@@ -1754,7 +3286,24 @@
 - Body: required
 - Flags: none
 - Output: list path `countItems`; columns `error`, `normal`, `timestamp`, `total`
-- Example: `# ⚠️ start/end 必须 RFC3339；传 unix ms 会导致分桶数异常（实测 60001 桶） echo '{ "clusterName": "kpanda-global-cluster", "namespace": "ghippo-system", "serviceName": ["ghippo-apiserver"], "start": "2026-05-21T07:00:00.000Z", "end": "2026-05-21T08:00:00.000Z", "interval": "1m", "onlyErrorSpans": false }' | dce insight tracing query-span-histogram --file - -o json # 输出： # .countItems[] { timestamp(ms), normal, error, total } # .durationItems[] { timestamp(ms), p75Duration, p95Duration, p99Duration, avgDuration (ns) }`
+- Example:
+
+```
+# ⚠️ start/end 必须 RFC3339；传 unix ms 会导致分桶数异常（实测 60001 桶）
+echo '{
+  "clusterName": "kpanda-global-cluster",
+  "namespace":   "ghippo-system",
+  "serviceName": ["ghippo-apiserver"],
+  "start": "2026-05-21T07:00:00.000Z",
+  "end":   "2026-05-21T08:00:00.000Z",
+  "interval": "1m",
+  "onlyErrorSpans": false
+}' | dce insight tracing query-span-histogram --file - -o json
+
+# 输出：
+#   .countItems[]     { timestamp(ms), normal, error, total }
+#   .durationItems[]  { timestamp(ms), p75Duration, p95Duration, p99Duration, avgDuration (ns) }
+```
 
 ### `dce insight tracing query-spans`
 
@@ -1764,7 +3313,40 @@
 - Body: required
 - Flags: none
 - Output: list path `items`; columns `duration`, `method`, `operationName`, `protocol`, `serviceName`, `spanId`
-- Example: `# ⚠️ POST body 中 start / end 必须是 RFC3339(Nano) 字符串，不是 unix ms # sort 支持：startTime,desc | startTime,asc | duration,desc | duration,asc（默认 startTime,desc） echo '{ "clusterName": "kpanda-global-cluster", "namespace": "ghippo-system", "serviceName": ["ghippo-apiserver"], "operationName": ["GET /api/v1/orders"], "start": "2026-05-21T07:00:00.000Z", "end": "2026-05-21T08:00:00.000Z", "durationMin": "200ms", "onlyErrorSpans": true, "sort": "duration,desc", "page": 1, "pageSize": 50, "tags": [ {"key":"http.status_code","operation":"EQUAL","value":"500"} ] }' | dce insight tracing query-spans --file - -o json # 字段说明： # clusterName / cluster 二选一 # namespace 必填 # serviceName / operationName 字符串数组 # durationMin/durationMax go duration: ns/us/ms/s/m/h # tags[].operation FilterOperator # CONTAIN/NOT_CONTAIN/EQUAL/NOT_EQUAL/REGEX_PATTERN/ # LT/LE/GT/GE/EQ/NE # onlyErrorSpans 仅返回错误 span # spanKinds 可选，默认 [SPAN_KIND_SERVER, SPAN_KIND_CLIENT] # 输出：.items[] 含 duration / method / operationName / protocol / serviceName / spanId`
+- Example:
+
+```
+# ⚠️ POST body 中 start / end 必须是 RFC3339(Nano) 字符串，不是 unix ms
+# sort 支持：startTime,desc | startTime,asc | duration,desc | duration,asc（默认 startTime,desc）
+echo '{
+  "clusterName": "kpanda-global-cluster",
+  "namespace":   "ghippo-system",
+  "serviceName": ["ghippo-apiserver"],
+  "operationName": ["GET /api/v1/orders"],
+  "start": "2026-05-21T07:00:00.000Z",
+  "end":   "2026-05-21T08:00:00.000Z",
+  "durationMin":   "200ms",
+  "onlyErrorSpans": true,
+  "sort":     "duration,desc",
+  "page":     1,
+  "pageSize": 50,
+  "tags": [
+    {"key":"http.status_code","operation":"EQUAL","value":"500"}
+  ]
+}' | dce insight tracing query-spans --file - -o json
+
+# 字段说明：
+#   clusterName / cluster        二选一
+#   namespace                    必填
+#   serviceName / operationName  字符串数组
+#   durationMin/durationMax      go duration: ns/us/ms/s/m/h
+#   tags[].operation             FilterOperator
+#                                CONTAIN/NOT_CONTAIN/EQUAL/NOT_EQUAL/REGEX_PATTERN/
+#                                LT/LE/GT/GE/EQ/NE
+#   onlyErrorSpans               仅返回错误 span
+#   spanKinds                    可选，默认 [SPAN_KIND_SERVER, SPAN_KIND_CLIENT]
+# 输出：.items[] 含 duration / method / operationName / protocol / serviceName / spanId
+```
 
 ### `dce insight tracing statement-histogram`
 
@@ -1775,7 +3357,35 @@
 - Flags:
   - `--cluster-name` (path, required): Required.
 - Output: list path `duration`; columns `timestamp`, `value`
-- Example: `# sort 支持（proto canonical，逗号分隔，默认 request_count,desc）： # request_count,desc | request_count,asc # avg_duration,desc | avg_duration,asc # error_requests,desc| error_requests,asc # error_rate,desc | error_rate,asc # @timestamp,desc | @timestamp,asc echo '{ "namespace": "ghippo-system", "startTime": "2026-05-21T07:00:00.000Z", "endTime": "2026-05-21T08:00:00.000Z", "interval": "1m", "topN": 10, "sort": "avg_duration,desc", "clauses": [ {"field":"db.system","operation":"EQUAL","stringValue":"mysql"} ] }' | dce insight tracing statement-histogram \ --cluster-name kpanda-global-cluster --file - -o json # 输出（按时间桶的 BucketHistogram 数组）： # .total 调用次数 # .duration 平均耗时（ns） # .errors 错误次数 # .errorRate 错误率 # .sourcePods 调用容器组`
+- Example:
+
+```
+# sort 支持（proto canonical，逗号分隔，默认 request_count,desc）：
+#   request_count,desc | request_count,asc
+#   avg_duration,desc  | avg_duration,asc
+#   error_requests,desc| error_requests,asc
+#   error_rate,desc    | error_rate,asc
+#   @timestamp,desc    | @timestamp,asc
+echo '{
+  "namespace": "ghippo-system",
+  "startTime": "2026-05-21T07:00:00.000Z",
+  "endTime":   "2026-05-21T08:00:00.000Z",
+  "interval":  "1m",
+  "topN":      10,
+  "sort":      "avg_duration,desc",
+  "clauses": [
+    {"field":"db.system","operation":"EQUAL","stringValue":"mysql"}
+  ]
+}' | dce insight tracing statement-histogram \
+      --cluster-name kpanda-global-cluster --file - -o json
+
+# 输出（按时间桶的 BucketHistogram 数组）：
+#   .total       调用次数
+#   .duration    平均耗时（ns）
+#   .errors      错误次数
+#   .errorRate   错误率
+#   .sourcePods  调用容器组
+```
 
 ### `dce insight tracing statement-top-k`
 
@@ -1786,7 +3396,21 @@
 - Flags:
   - `--cluster-name` (path, required): Required.
 - Output: list path `items`; columns `address`, `avgDuration`, `errorRate`, `sourceCluster`, `sourceNamespace`, `sourceService`
-- Example: `echo '{ "namespace": "ghippo-system", "startTime": "2026-05-21T07:00:00.000Z", "endTime": "2026-05-21T08:00:00.000Z", "topN": 20, "sort": "avg_duration,desc" }' | dce insight tracing statement-top-k \ --cluster-name kpanda-global-cluster --file - -o json # 输出：.items[] 含 address / system / sourceCluster / sourceNamespace / # sourceService / statement / totalCount / avgDuration(ns) / errorRate`
+- Example:
+
+```
+echo '{
+  "namespace": "ghippo-system",
+  "startTime": "2026-05-21T07:00:00.000Z",
+  "endTime":   "2026-05-21T08:00:00.000Z",
+  "topN":      20,
+  "sort":      "avg_duration,desc"
+}' | dce insight tracing statement-top-k \
+      --cluster-name kpanda-global-cluster --file - -o json
+
+# 输出：.items[] 含 address / system / sourceCluster / sourceNamespace /
+#       sourceService / statement / totalCount / avgDuration(ns) / errorRate
+```
 
 ## User
 
@@ -1801,5 +3425,11 @@
   - `--page-size` (query, default `20`, int32): 每页条数
   - `--page` (query, default `1`, int32): 当前页
 - Output: list path `items`; columns `name`, `id`, `enabled`; pagination `offset`
-- Example: `dce insight user list-users # Fuzzy search by name + paged JSON output dce insight user list-users --search alice --page 1 --page-size 50 -o json`
+- Example:
+
+```
+dce insight user list-users
+# Fuzzy search by name + paged JSON output
+dce insight user list-users --search alice --page 1 --page-size 50 -o json
+```
 

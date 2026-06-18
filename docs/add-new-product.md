@@ -23,7 +23,8 @@ skills/dce/      ← AI Agent Skill（SKILL.md + references/）
 |---|---|
 | `specs/sources.yaml` | 声明每个产品的 OpenAPI 来源（repo、commit、文件路径、`display_name`） |
 | `internal/overlay/<source>.yaml` | 对生成结果做增量修改：隐藏内部 API、补充 short/alias/example/默认分页 |
-| `cli.yaml` | CLI 名称和 auth 校验接口 |
+| `cli.yaml` | CLI 名称、auth 校验接口，以及 `skill.include`（指向手写 Skill 内容目录） |
+| `internal/skill-include/` | **手写**的 Skill 散文，codegen 后按相对路径**追加**到生成的 `skills/dce/` 对应文件（CLI 级或模块级，详见下文[手写 Skill 内容放哪](#手写-skill-内容放哪)）。**不要直接改 `skills/dce/`，它每次 codegen 被整体重写** |
 | `internal/generated/modules_gen.go` | **自动生成**，把所有产品模块挂载到 cobra root，不要手改 |
 | `skills/dce/references/modules/<display_name>.md` | **自动生成**，AI Agent 用的命令索引 |
 
@@ -50,6 +51,41 @@ skills/dce/      ← AI Agent Skill（SKILL.md + references/）
 | Operations Management | `operations-management` | `gmagpie` |
 
 新增产品时，先在 DCE 控制台确认该模块在导航栏上的英文名称，再填写 `display_name`；source key 仍可使用内部代号（如 OpenAPI 目录名 `mspider`）。
+
+### 手写 Skill 内容放哪
+
+先分清你要加的是「**一个完整的独立 skill**」还是「**给现有 dce skill 补内容**」。
+
+> **判据**：用户说一句话（如"诊断我的集群"），你希不希望它**自己跳出来被触发**？
+> - 希望 → 它是**一个完整独立 skill**（自带 `name`/`description`、意图触发），哪怕只服务某个模块的领域（如集群诊断）。走下面的 A。
+> - 不希望，只是给 dce skill 补说明 / 注意 / 命令示例 → 走下面的 B。
+
+#### A. 完整独立 skill（含模块级的诊断 / 工作流类）
+
+直接新建 `skills/<name>/SKILL.md`，**手写、直接提交**——它不是生成物，也不走 skill-include / overlay：
+
+- 与 `skills/dce/` **平级**。lathe 只重写 `skills/dce`，**不会碰**你的目录；CI 的 `make bootstrap` + diff 检查也不受影响（bootstrap 只重生成 `skills/dce`）。
+- **不要加 `.lathe-skill` 标记**（那是 lathe 生成物的所有权标记，加了反而会被当成可清除目录）。
+- 命名建议用冒号命名空间、且对齐 **`display_name`**：如 `container-management:cluster-diagnosis`（而非 source key `kpanda:`），与 dce skill 的模块名一致、description 也更易被触发。
+- 装上后靠**自己的 `description` 自发现**，不需要被任何东西引用；若它调用 `dce` 命令，那是运行期依赖（需 dce CLI 一并装好）。
+- **不要**把这类塞进 skill-include 或 overlay——那会让它丢掉独立触发能力，退化成一段没人主动召唤的背景文字。
+
+#### B. 给现有 dce skill 补文案（散文 / 按命令的结构化）
+
+`skills/dce/` 整个目录每次 codegen 被 `RemoveAll` 重写，**手改不会保留**，所以通过下面两个通道注入：
+
+| 内容 | 放哪（手写源） | 追加 / 渲染到 |
+|---|---|---|
+| **CLI 级、跨模块**的散文（如 Module availability） | `internal/skill-include/SKILL.md` | `skills/dce/SKILL.md` |
+| **模块级**的散文（绑定某产品、不绑定单条命令，如"GPU 指标约 30s 延迟"） | `internal/skill-include/references/modules/<display_name>.md` | 该模块的 `references/modules/<display_name>.md` |
+| **按命令的结构化**（example / note / prerequisite / ignore / short / alias…） | `internal/overlay/<source>.yaml` 的 `commands:` | 渲染进模块文档对应命令段 |
+
+要点：
+
+- **散文走 skill-include，按命令的结构化走 overlay**（overlay 的 schema 只有 `defaults` 和按命令的 `commands:`，放不下模块级散文；但能放某条命令的 `long`/`example`/`notes`/`prerequisites`/`known_errors`）。
+- skill-include 是**按相对路径**映射的：`internal/skill-include/<rel>` → `skills/dce/<rel>`。所以模块级散文要用 **`display_name`**（如 `container-management.md`），不是 source key（`kpanda`），否则会生成一个没人读的孤儿文件。
+- 追加规则（lathe v0.3.0）：只有 `SKILL.md` 和 `references/**.md` 会**追加**到已有文件；`agents/`、`assets/`、`scripts/` 及 references 下的非-md 文件是**只新建、不追加**（保护生成的非-md 文件）。
+- 模块级散文能被 agent 读到，是因为 `SKILL.md` 的 References 列表本就指向 `references/modules/<display_name>.md`。
 
 ---
 

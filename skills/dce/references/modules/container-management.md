@@ -1049,7 +1049,13 @@
   - `--fuzzy-name` (query): FuzzyName is used to fuzzy search by multiple parameters including name.
   - `--gpu-type` (query): gpu_type is filter with pods resources, when value is * search all
 - Output: list path `items`; columns `metadata.name`, `metadata.namespace`, `metadata.creationTimestamp`, `revision`; pagination `offset`
-- Example: `dce container-management apps list-deployments \ --cluster prod-cluster \ --namespace default`
+- Example:
+
+```
+dce container-management apps list-deployments \
+  --cluster prod-cluster \
+  --namespace default
+```
 
 ### `dce container-management apps list-replica-sets`
 
@@ -1923,7 +1929,12 @@
   - `--exclude-metrics` (query): exclude_metrics
   - `--show-shim-cluster` (query): ShowShimCluster is used to control whether returned clusters contain shim cluster, default false.
 - Output: list path `items`; columns `metadata.name`, `metadata.namespace`, `status.phase`, `spec.provider`, `spec.region`, `metadata.creationTimestamp`; pagination `offset`
-- Example: `dce container-management cluster list-clusters dce container-management cluster list-clusters -o json | jq '.items[].name'`
+- Example:
+
+```
+dce container-management cluster list-clusters
+dce container-management cluster list-clusters -o json | jq '.items[].name'
+```
 
 ### `dce container-management cluster update-clusters`
 

@@ -550,7 +550,13 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `dce global-management group create-group \ --set name=dev-team \ --set description="Development team"`
+- Example:
+
+```
+dce global-management group create-group \
+  --set name=dev-team \
+  --set description="Development team"
+```
 
 ### `dce global-management group delete-group`
 
@@ -641,7 +647,13 @@
 - Body: required
 - Flags:
   - `--id` (path, required): id
-- Example: `dce global-management group update-group --id <id> \ --set name=dev-team-renamed \ --set description="Renamed team"`
+- Example:
+
+```
+dce global-management group update-group --id <id> \
+  --set name=dev-team-renamed \
+  --set description="Renamed team"
+```
 
 ### `dce global-management group update-group-roles`
 
@@ -1185,7 +1197,19 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `# scope: platform | folder | workspace echo '{ "name": "my-role", "description": "Custom role", "scope": "platform", "perms": [ {"gproduct": "ghippo", "resourceType": "User", "action": "get"} ] }' | dce global-management role create-role --file -`
+- Example:
+
+```
+# scope: platform | folder | workspace
+echo '{
+  "name": "my-role",
+  "description": "Custom role",
+  "scope": "platform",
+  "perms": [
+    {"gproduct": "ghippo", "resourceType": "User", "action": "get"}
+  ]
+}' | dce global-management role create-role --file -
+```
 
 ### `dce global-management role delete-role`
 
@@ -1309,7 +1333,16 @@
 - Body: required
 - Flags:
   - `--name` (path, required): name
-- Example: `echo '{ "description": "Updated description", "perms": [ {"gproduct": "ghippo", "resourceType": "User", "action": "get"} ] }' | dce global-management role update-role --name <name> --file -`
+- Example:
+
+```
+echo '{
+  "description": "Updated description",
+  "perms": [
+    {"gproduct": "ghippo", "resourceType": "User", "action": "get"}
+  ]
+}' | dce global-management role update-role --name <name> --file -
+```
 
 ## SecurityPolicy
 
@@ -1652,7 +1685,15 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `dce global-management users create-user \ --set name=alice \ --set password=changeme \ --set description="Alice from dev team" \ --set temporary=false`
+- Example:
+
+```
+dce global-management users create-user \
+  --set name=alice \
+  --set password=changeme \
+  --set description="Alice from dev team" \
+  --set temporary=false
+```
 
 ### `dce global-management users create-user-access-token`
 
@@ -1662,7 +1703,13 @@
 - Body: required
 - Flags:
   - `--id` (path, required): id
-- Example: `dce global-management users create-user-access-token --id <id> \ --set name=my-token \ --set expiredAt=2026-12-31T00:00:00Z`
+- Example:
+
+```
+dce global-management users create-user-access-token --id <id> \
+  --set name=my-token \
+  --set expiredAt=2026-12-31T00:00:00Z
+```
 
 ### `dce global-management users create-user-without-password`
 
@@ -1771,7 +1818,12 @@
   - `--page-size` (query, default `20`, int32): Number of results per page
   - `--page` (query, default `1`, int32): 当前页, 大于等于 0，小于等于 1000
 - Output: list path `items`; columns `name`, `id`, `canAuthorize`, `createdAt`, `description`, `email`; pagination `offset`
-- Example: `dce global-management users list-users dce global-management users list-users --page-size 50 -o json`
+- Example:
+
+```
+dce global-management users list-users
+dce global-management users list-users --page-size 50 -o json
+```
 
 ### `dce global-management users reset-user-mfa`
 
@@ -1790,7 +1842,12 @@
 - Body: required
 - Flags:
   - `--id` (path, required): id
-- Example: `dce global-management users set-user-password --id <id> \ --set password=NewP@ssw0rd`
+- Example:
+
+```
+dce global-management users set-user-password --id <id> \
+  --set password=NewP@ssw0rd
+```
 
 ### `dce global-management users update-user`
 
@@ -1800,7 +1857,16 @@
 - Body: required
 - Flags:
   - `--id` (path, required): id
-- Example: `dce global-management users update-user --id <id> \ --set email=newemail@example.com \ --set firstname=Alice \ --set lastname=Smith \ --set description="updated" \ --set enabled=true`
+- Example:
+
+```
+dce global-management users update-user --id <id> \
+  --set email=newemail@example.com \
+  --set firstname=Alice \
+  --set lastname=Smith \
+  --set description="updated" \
+  --set enabled=true
+```
 
 ### `dce global-management users update-user-certify`
 
@@ -1818,7 +1884,16 @@
 - Body: required
 - Flags:
   - `--id` (path, required): id
-- Example: `# Add roles echo '{"addRoles":["Admin"],"removeRoles":[]}' | \ dce global-management users update-user-roles --id <id> --file - # Remove roles echo '{"addRoles":[],"removeRoles":["Editor"]}' | \ dce global-management users update-user-roles --id <id> --file -`
+- Example:
+
+```
+# Add roles
+echo '{"addRoles":["Admin"],"removeRoles":[]}' | \
+  dce global-management users update-user-roles --id <id> --file -
+# Remove roles
+echo '{"addRoles":[],"removeRoles":["Editor"]}' | \
+  dce global-management users update-user-roles --id <id> --file -
+```
 
 ## Webhook
 
@@ -1976,7 +2051,15 @@
 - Body: required
 - Flags:
   - `--folder-id` (path, required, int32): folderId
-- Example: `dce global-management workspace authorize --folder-id <folderId> \ --set memberId=<userId> \ --set memberType=user \ --set memberName=alice \ --set-str 'roleNames[0]=Workspace Admin'`
+- Example:
+
+```
+dce global-management workspace authorize --folder-id <folderId> \
+  --set memberId=<userId> \
+  --set memberType=user \
+  --set memberName=alice \
+  --set-str 'roleNames[0]=Workspace Admin'
+```
 
 ### `dce global-management workspace bind-exclusive-resource-to-workspace`
 
@@ -2012,7 +2095,14 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `# alias is the display name; parentFolderId=0 places it under root dce global-management workspace create-folder \ --set alias=my-folder \ --set parentFolderId=0`
+- Example:
+
+```
+# alias is the display name; parentFolderId=0 places it under root
+dce global-management workspace create-folder \
+  --set alias=my-folder \
+  --set parentFolderId=0
+```
 
 ### `dce global-management workspace create-workspace`
 
@@ -2021,7 +2111,14 @@
 - Auth: required
 - Body: required
 - Flags: none
-- Example: `# alias is the display name; parentFolderId=0 places it under root dce global-management workspace create-workspace \ --set alias=my-workspace \ --set parentFolderId=0`
+- Example:
+
+```
+# alias is the display name; parentFolderId=0 places it under root
+dce global-management workspace create-workspace \
+  --set alias=my-workspace \
+  --set parentFolderId=0
+```
 
 ### `dce global-management workspace deauthorize`
 
@@ -2267,7 +2364,12 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `name`, `id`, `alias`; pagination `offset`
-- Example: `dce global-management workspace list-workspaces dce global-management workspace list-workspaces -o json`
+- Example:
+
+```
+dce global-management workspace list-workspaces
+dce global-management workspace list-workspaces -o json
+```
 
 ### `dce global-management workspace move-workspace`
 
@@ -2325,7 +2427,12 @@
 - Body: required
 - Flags:
   - `--folder-id` (path, required, int32): folderId
-- Example: `dce global-management workspace update-folder --folder-id <id> \ --set alias=new-folder-name`
+- Example:
+
+```
+dce global-management workspace update-folder --folder-id <id> \
+  --set alias=new-folder-name
+```
 
 ### `dce global-management workspace update-quota-check`
 
