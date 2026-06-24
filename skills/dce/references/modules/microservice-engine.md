@@ -2860,7 +2860,18 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `clusterName`, `enabled`, `ephemeral`, `healthy`, `instanceHeartBeatInterval`, `instanceHeartBeatTimeOut`; pagination `offset`
-- Example: `dce microservice-engine nacos list-service-instance \ --workspace-id <workspace-id> \ --cluster-name <cluster-name> \ --namespace-name <namespace-name> \ --nacos-name <nacos-name> \ --nacos-namespace <nacos-namespace> \ --nacos-service <service-name> \ --page 1 --page-size 20`
+- Example:
+
+```
+dce microservice-engine nacos list-service-instance \
+  --workspace-id <workspace-id> \
+  --cluster-name <cluster-name> \
+  --namespace-name <namespace-name> \
+  --nacos-name <nacos-name> \
+  --nacos-namespace <nacos-namespace> \
+  --nacos-service <service-name> \
+  --page 1 --page-size 20
+```
 
 ### `dce microservice-engine nacos list-service-subscriber`
 
@@ -4082,7 +4093,17 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `hosts`; pagination `offset`
-- Example: `dce microservice-engine skoala list-hosted-registry-service-instances \ --workspace-id <workspace-id> \ --cluster-name <cluster-name> \ --namespace-name <namespace-name> \ --nacos-name <nacos-name> \ --nacos-service <service-name> \ --page 1 --page-size 20`
+- Example:
+
+```
+dce microservice-engine skoala list-hosted-registry-service-instances \
+  --workspace-id <workspace-id> \
+  --cluster-name <cluster-name> \
+  --namespace-name <namespace-name> \
+  --nacos-name <nacos-name> \
+  --nacos-service <service-name> \
+  --page 1 --page-size 20
+```
 
 ### `dce microservice-engine skoala list-mesh`
 
@@ -4297,7 +4318,14 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `gatewayType`; pagination `offset`
-- Example: `dce microservice-engine skoala-v1alpha3 list-all-gateways \ --cluster-name <cluster-name> \ --namespace-name <namespace-name> \ --page 1 --page-size 20`
+- Example:
+
+```
+dce microservice-engine skoala-v1alpha3 list-all-gateways \
+  --cluster-name <cluster-name> \
+  --namespace-name <namespace-name> \
+  --page 1 --page-size 20
+```
 
 ### `dce microservice-engine skoala-v1alpha3 list-cluster-namespace`
 
@@ -4341,7 +4369,13 @@
   - `--page` (query, default `1`, int32): page
   - `--page-size` (query, default `20`, int32): pageSize
 - Output: list path `items`; columns `gatewayType`; pagination `offset`
-- Example: `dce microservice-engine skoala-v1alpha3 list-gateways \ --workspace-id <workspace-id> \ --page 1 --page-size 20`
+- Example:
+
+```
+dce microservice-engine skoala-v1alpha3 list-gateways \
+  --workspace-id <workspace-id> \
+  --page 1 --page-size 20
+```
 
 ### `dce microservice-engine skoala-v1alpha3 list-workspace-role-permissions`
 
